@@ -1,6 +1,6 @@
 # MusicPlus
 
-**Zone music for WoW Forever (Classic 1.60.1).** MusicPlus plays each zone's original Classic music tracks and then six brand-new custom songs written for that zone, all shuffled, in 24 Alliance and Horde zones and capitals.
+**Additional zone music for WoW Forever (Classic 1.60.1).** MusicPlus adds 144 new songs: 6 per zone across 24 zones, covering all 6 classic capitals plus 18 Alliance and Horde zones from level 1 to 45. Each new song is written around the mood of its zone. Each zone plays its original Classic tracks first, then its 6 new songs, shuffled and blended seamlessly. Inns with their own tavern music keep it, unchanged, and you can choose between continuous music or the original experience, with gaps of silence between songs.
 
 - Client: WoW Forever (classic-style beta), version 1.60.1, TOC Interface `16001`
 - Current version: **0.5.2**
@@ -14,7 +14,7 @@
 In each supported zone, MusicPlus plays:
 
 1. **All of that zone's original Classic tracks** (day and night together), in a shuffled order. These are played straight from your game client by file ID, so they aren't included in the download.
-2. **Then all 6 custom songs** for that zone, also shuffled.
+2. **Then all 6 new songs** for that zone, also shuffled.
 3. Then it starts over with a fresh shuffle of both groups.
 
 A few details:
@@ -26,15 +26,13 @@ A few details:
 
 ### The 24 zones
 
-The number after each zone is how many original Classic tracks it has. Every zone also has 6 custom songs.
+6 capital cities, 6 starting zones and 12 leveling zones, from level 1 to 45. The number after each zone is how many original Classic tracks it has. Every zone also has 6 new songs.
 
-| Level range | Zones |
+| Group | Zones |
 |---|---|
-| Capitals | Stormwind (8), Ironforge (3), Darnassus (3), Orgrimmar (2), Thunder Bluff (3), Undercity (3) |
-| 1–10 | Elwynn Forest (3), Dun Morogh (7), Teldrassil (5), Durotar (4), Mulgore (4), Tirisfal Glades (6) |
-| 10–25 | Westfall (4), Loch Modan (3), Darkshore (4), Silverpine Forest (6), The Barrens (6) |
-| 15–30 | Redridge Mountains (3), Stonetalon Mountains (6), Duskwood (6), Ashenvale (5) |
-| 20–45 | Wetlands (5), Hillsbrad Foothills (3), Stranglethorn Vale (6) |
+| Capital cities | Stormwind (8), Ironforge (3), Darnassus (3), Orgrimmar (2), Thunder Bluff (3), Undercity (3) |
+| Starting zones (1–10) | Elwynn Forest (3), Dun Morogh (7), Teldrassil (5), Durotar (4), Mulgore (4), Tirisfal Glades (6) |
+| Leveling zones (10–45) | Westfall (4), Loch Modan (3), Darkshore (4), Silverpine Forest (6), The Barrens (6), Redridge Mountains (3), Stonetalon Mountains (6), Duskwood (6), Ashenvale (5), Wetlands (5), Hillsbrad Foothills (3), Stranglethorn Vale (6) |
 
 Zones that share music in the game share the same originals. For example, Elwynn, Loch Modan, Redridge and Hillsbrad all use the Forest tracks.
 
@@ -162,4 +160,4 @@ The **custom songs** in the release zip are free to use with this addon, but the
 
 ---
 
-*MusicPlus is an unofficial fan addon. It is not affiliated with or endorsed by Blizzard Entertainment. World of Warcraft and Warcraft are trademarks of Blizzard Entertainment, Inc.*
+*MusicPlus is an unofficial fan addon. It is not affiliated with or endorsed by Blizzard Entertainment. Built with Grok Bot. World of Warcraft and Warcraft are trademarks of Blizzard Entertainment, Inc.*
