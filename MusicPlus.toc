@@ -1,0 +1,9 @@
+## Interface: 16001
+## Title: MusicPlus
+## Notes: 6 capitals and 18 zones (Alliance and Horde, levels 1-45): all original zone tracks (shuffled), then 6 custom songs per zone (shuffled), looping, on the Music channel. Inns with their own music keep it. /mplus for options.
+## Author: wowmusicplus
+## Version: 0.5.2
+## Category-enUS: Audio
+## SavedVariables: MusicPlusDB
+
+MusicPlus.lua

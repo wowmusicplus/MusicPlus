@@ -1,0 +1,39 @@
+# Song files are shipped in the GitHub Release zip, not in the repo.
+*.mp3
+!/Silence.mp3
+
+# Song folders (one per zone)
+/Ashenvale/
+/Darkshore/
+/Darnassus/
+/Dun Morogh/
+/Durotar/
+/Duskwood/
+/Elwynn Forest/
+/Hillsbrad Foothills/
+/Ironforge/
+/Loch Modan/
+/Mulgore/
+/Orgrimmar/
+/Redridge Mountains/
+/Silverpine Forest/
+/Stonetalon Mountains/
+/Stormwind/
+/Stranglethorn Vale/
+/Teldrassil/
+/The Barrens/
+/Thunder Bluff/
+/Tirisfal Glades/
+/Undercity/
+/Westfall/
+/Wetlands/
+
+# Release builds
+*.zip
+
+# OS / editor clutter
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
