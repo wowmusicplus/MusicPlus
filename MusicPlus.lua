@@ -1,4 +1,27 @@
---[[ MusicPlus 0.5.2 (24 zones: 6 capitals and 18 zones, Alliance and Horde, levels 1-45) for WoW: Forever 1.60.1 (Interface 16001)
+--[[ MusicPlus 0.5.6 (24 zones: 6 capitals and 18 zones, Alliance and Horde, levels 1-45) for WoW: Forever 1.60.1 (Interface 16001)
+0.5.6: Calmer reworked music for Thunder Bluff, Dun Morogh, Durotar, Stranglethorn Vale, Stormwind (4 new songs) and Orgrimmar (data only: the customs entries of those 6 zones; nothing else changed).
+0.5.5: Undercity: 5 new custom songs replace 5 of the 6 old ones; Apothecarium Whispers kept (data only: the 5 Undercity customs entries; nothing else changed).
+0.5.4: Redridge Mountains: 6 new calmer custom songs (data only: the 6 Redridge customs entries; nothing else changed).
+0.5.3: zone switches on flight paths and at borders (on a flight from Westfall to Redridge the tracks kept switching).
+ * Flight lock: while UnitOnTaxi("player") is true, zone readings are ignored. The song and the rotation of the zone
+   you took off from go on (Loop music and silences as usual); no inn can start (SpotHere is off on a taxi, so flying
+   over an inn circle or an inn subzone does nothing; an inn state from before takeoff still ends by the 0.4.4 exit
+   rules); if MusicPlus wasn't playing at takeoff, nothing starts until landing. Engaged by the 0.5 s position poll,
+   PLAYER_CONTROL_LOST or any zone evaluation; released when UnitOnTaxi is false again, once in the world (poll,
+   PLAYER_CONTROL_GAINED, or the evaluation after a loading screen). Landing = the normal zone check with the prompt
+   ~1 s confirmation: another configured zone -> its own rotation (exactly like any zone switch), outside the zones ->
+   the 1.5 s fade and the game's music, same zone -> nothing at all. The takeoff zone is kept in MusicPlusDB.taxiZone
+   (false = MusicPlus was off), so a /reload or relog mid-flight goes on with it (no saved value: the zone below you,
+   like a login). A loading screen mid-flight replays the current song, as every loading screen does.
+ * Border delay: walking from one configured zone into another, or out of the zones, now needs the new place read
+   for ZONE_SWITCH_DELAY (6) s in a row (zone events and the 0.5 s position poll are all checked); any other reading in
+   between (walking back) cancels it and the song just goes on. NOT for: first activation (login, /reload, entering
+   from outside the zones with nothing playing), inns (0.4.4 hysteresis unchanged), and the PROMPT_WINDOW s after a
+   loading screen (hearth, portal, instance exit) or a landing: there the 0.5.2 second reading CONFIRM_PROMPT s later
+   is enough. The capital "within" rule is unchanged (only the timing). Without flights or border crossings the
+   music timing is exactly 0.5.2's.
+ * /mplus debug notes the flight lock (engaged / released) and pending switches (started / cancelled); /mplus status
+   shows "(on flight path, zone locked)" while flying and a pending switch with its countdown.
 0.5.2: "Welcome to MusicPlus" window (UI only; music timing and output unchanged). Shown once, about WELCOME_DELAY s after
    the first PLAYER_ENTERING_WORLD of the session, if MusicPlusDB.welcomeShown isn't set (new installs AND upgrades);
    never on later loading screens of the session. In combat it waits for PLAYER_REGEN_ENABLED. The flag is written the
@@ -31,7 +54,8 @@ then again with a fresh shuffle of both groups. Entering the zone (login, zone c
 starts a freshly shuffled rotation. The song that just played is never first in the next rotation.
 Zones are pure data (ZONES below): adding a zone = adding an entry. 0.4.0 adds Elwynn Forest and Westfall.
 Moving straight from one configured zone into another (Stormwind <-> Elwynn <-> Westfall) starts the new
-zone's own freshly shuffled rotation (confirmed by a second reading ~1 s later, like a stop).
+zone's own freshly shuffled rotation (confirmed by a second reading ~1 s later, like a stop; 0.5.3: walking needs
+6 s in the new zone, see above).
 
 PLAYBACK (since 0.2.0): Music channel, ambient sounds untouched, game music setting left ON.
  * Mode "music" (default): PlayMusic(file) for every track (originals by FileDataID, custom MP3s by path).
@@ -101,6 +125,12 @@ local VOL_CVAR = "Sound_MusicVolume"              -- Settings > Audio > "Music" 
 local GAP_MIN, GAP_MAX = 180, 300
 local SILENCE_FILE = ADDON_DIR .. "Silence.mp3" -- silent placeholder for PlayMusic during a gap (need not exist)
 local WELCOME_DELAY = 2 -- 0.5.2: s after the first PLAYER_ENTERING_WORLD before the one-time welcome window
+-- 0.5.3: zone-change timing. Walking over a border (zone -> zone, or out of the zones) must read the new place for
+-- ZONE_SWITCH_DELAY s in a row; inns, and the PROMPT_WINDOW s after a loading screen or a landing, keep the 0.5.2 rule
+-- (a second reading CONFIRM_PROMPT s later). Tune the border delay here.
+local ZONE_SWITCH_DELAY = 6 -- s
+local CONFIRM_PROMPT = 1.0  -- s, the 0.5.2 two-reading confirmation
+local PROMPT_WINDOW = 5     -- s after PLAYER_ENTERING_WORLD / landing in which a new zone is confirmed promptly
 
 ---------------------------------------------------------------- zone data
 -- One entry per zone. Fields:
@@ -138,12 +168,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Stormwind\\Varians Empty Throne.mp3",            len = 111.98, name = "Varians Empty Throne" },
-            { file = "Stormwind\\The Valley of Heroes.mp3",            len = 104.78, name = "The Valley of Heroes" },
-            { file = "Stormwind\\Sunlight on the Trade District.mp3",  len = 138.43, name = "Sunlight on the Trade District" },
-            { file = "Stormwind\\Canals of Old Town.mp3",              len = 102.43, name = "Canals of Old Town" },
             { file = "Stormwind\\Cathedral of Light by Moonlight.mp3", len = 134.88, name = "Cathedral of Light by Moonlight" },
             { file = "Stormwind\\Lions Pride at Dusk.mp3",             len = 144.84, name = "Lions Pride at Dusk" },
+            { file = "Stormwind\\Valley of Heroes at Rest.mp3",        len = 179.47, name = "Valley of Heroes at Rest" },
+            { file = "Stormwind\\Evening at the Keep.mp3",             len = 179.47, name = "Evening at the Keep" },
+            { file = "Stormwind\\Lantern Light on the Ramparts.mp3",   len = 178.82, name = "Lantern Light on the Ramparts" },
+            { file = "Stormwind\\Twilight Over the Harbor.mp3",        len = 180.00, name = "Twilight Over the Harbor" },
         },
         -- No inn subzones in Forever's Stormwind (inside the Gilded Rose it's just "Trade District").
         -- The Gilded Rose, Pig and Whistle Tavern and The Blue Recluse have no inn music in Forever (their WMO
@@ -321,12 +351,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Orgrimmar\\Valley of Strength.mp3",           len = 188.83, name = "Valley of Strength" },
-            { file = "Orgrimmar\\Thralls Red Fortress.mp3",         len = 169.94, name = "Thralls Red Fortress" },
-            { file = "Orgrimmar\\Durotar Sun.mp3",                  len = 172.82, name = "Durotar Sun" },
-            { file = "Orgrimmar\\Drums of the Valley of Honor.mp3", len = 197.11, name = "Drums of the Valley of Honor" },
-            { file = "Orgrimmar\\Valley of Spirits Moonrise.mp3",   len = 184.99, name = "Valley of Spirits Moonrise" },
-            { file = "Orgrimmar\\Grommash Hold at Night.mp3",       len = 192.67, name = "Grommash Hold at Night" },
+            { file = "Orgrimmar\\Drums of the Red Stone.mp3",  len = 178.80, name = "Drums of the Red Stone" },
+            { file = "Orgrimmar\\March of the Warchief.mp3",   len = 180.00, name = "March of the Warchief" },
+            { file = "Orgrimmar\\Ancestors at the Gate.mp3",   len = 179.74, name = "Ancestors at the Gate" },
+            { file = "Orgrimmar\\Horn Over the Gates.mp3",     len = 180.00, name = "Horn Over the Gates" },
+            { file = "Orgrimmar\\Echoes of the Red Stone.mp3", len = 179.88, name = "Echoes of the Red Stone" },
+            { file = "Orgrimmar\\Valley of Wisdom.mp3",        len = 180.02, name = "Valley of Wisdom" },
         },
         -- No tavern music in Forever's Orgrimmar (new WMO 21142: no inn/tavern rows; Innkeeper Gryshka's inn uses the city music).
         inns = {},
@@ -349,12 +379,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Thunder Bluff\\Elder Rise.mp3",                 len = 183.98, name = "Elder Rise" },
-            { file = "Thunder Bluff\\Cairne Bloodhoofs Blessing.mp3", len = 198.84, name = "Cairne Bloodhoofs Blessing" },
-            { file = "Thunder Bluff\\Windrider Roost at Noon.mp3",    len = 163.22, name = "Windrider Roost at Noon" },
-            { file = "Thunder Bluff\\Hunter Rise Sunlight.mp3",       len = 197.64, name = "Hunter Rise Sunlight" },
-            { file = "Thunder Bluff\\Spirit Rise Moonsong.mp3",       len = 189.98, name = "Spirit Rise Moonsong" },
-            { file = "Thunder Bluff\\The Pools of Vision.mp3",        len = 188.42, name = "The Pools of Vision" },
+            { file = "Thunder Bluff\\Flute Above the Mesas.mp3",    len = 179.95, name = "Flute Above the Mesas" },
+            { file = "Thunder Bluff\\Morning on the High Rise.mp3", len = 179.95, name = "Morning on the High Rise" },
+            { file = "Thunder Bluff\\Dusk Over the Bluffs.mp3",     len = 179.71, name = "Dusk Over the Bluffs" },
+            { file = "Thunder Bluff\\Spirit Rise Winds.mp3",        len = 179.90, name = "Spirit Rise Winds" },
+            { file = "Thunder Bluff\\Heartbeat of the Plains.mp3",  len = 184.82, name = "Heartbeat of the Plains" },
+            { file = "Thunder Bluff\\Elder Rise Drums.mp3",         len = 180.02, name = "Elder Rise Drums" },
         },
         -- No tavern music in Thunder Bluff (WMOs 783/789; Innkeeper Pala's tent uses the city music).
         inns = {},
@@ -379,12 +409,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Undercity\\Sylvanass Royal Quarter.mp3",         len = 149.23, name = "Sylvanass Royal Quarter" },
-            { file = "Undercity\\Beneath Capital City.mp3",            len = 182.64, name = "Beneath Capital City" },
-            { file = "Undercity\\Ruins of Lordaeron by Moonlight.mp3", len = 189.26, name = "Ruins of Lordaeron by Moonlight" },
+            { file = "Undercity\\Organ of the Royal Crypts.mp3",       len = 188.59, name = "Organ of the Royal Crypts" },
+            { file = "Undercity\\Candles in the Catacombs.mp3",        len = 198.38, name = "Candles in the Catacombs" },
+            { file = "Undercity\\Minuet for the Forsaken.mp3",         len = 169.22, name = "Minuet for the Forsaken" },
             { file = "Undercity\\Apothecarium Whispers.mp3",           len = 172.92, name = "Apothecarium Whispers" },
-            { file = "Undercity\\The Dark Ladys Court.mp3",            len = 168.00, name = "The Dark Ladys Court" },
-            { file = "Undercity\\Canals of the Forsaken.mp3",          len = 184.44, name = "Canals of the Forsaken" },
+            { file = "Undercity\\The Deathstalkers Waltz.mp3",         len = 190.03, name = "The Deathstalkers Waltz" },
+            { file = "Undercity\\Crypt Pulse.mp3",                     len = 169.92, name = "Crypt Pulse" },
         },
         -- No tavern music in the Undercity (WMO 20736: city music; Innkeeper Norman's inn too).
         inns = {},
@@ -410,12 +440,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Dun Morogh\\Coldridge Valley Pipes.mp3",  len = 210.00, name = "Coldridge Valley Pipes" },
-            { file = "Dun Morogh\\Kharanos Hearthfire.mp3",     len = 203.54, name = "Kharanos Hearthfire" },
-            { file = "Dun Morogh\\Iceflow Lake Sunshine.mp3",   len = 187.22, name = "Iceflow Lake Sunshine" },
-            { file = "Dun Morogh\\GolBolar Quarry Morning.mp3", len = 198.02, name = "GolBolar Quarry Morning" },
-            { file = "Dun Morogh\\Frostmane Moon.mp3",          len = 193.22, name = "Frostmane Moon" },
-            { file = "Dun Morogh\\Shimmer Ridge Starlight.mp3", len = 213.07, name = "Shimmer Ridge Starlight" },
+            { file = "Dun Morogh\\Snowfall Over Kharanos.mp3",    len = 181.22, name = "Snowfall Over Kharanos" },
+            { file = "Dun Morogh\\Iceflow Lake Stillness.mp3",    len = 180.00, name = "Iceflow Lake Stillness" },
+            { file = "Dun Morogh\\Distant Horn in the Peaks.mp3", len = 179.52, name = "Distant Horn in the Peaks" },
+            { file = "Dun Morogh\\Frost on the Old Road.mp3",     len = 180.00, name = "Frost on the Old Road" },
+            { file = "Dun Morogh\\Hearthside at Thunderbrew.mp3", len = 179.71, name = "Hearthside at Thunderbrew" },
+            { file = "Dun Morogh\\Coldridge Embers.mp3",          len = 180.02, name = "Coldridge Embers" },
         },
         -- Subzone fallback: the Thunderbrew Distillery row (WMO 1970 set 1) is named, so the subzone may read "Thunderbrew Distillery".
         inns = { "Thunderbrew Distillery" },
@@ -476,12 +506,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Durotar\\Valley of Trials.mp3",        len = 202.99, name = "Valley of Trials" },
-            { file = "Durotar\\Razor Hill Drums.mp3",        len = 218.04, name = "Razor Hill Drums" },
-            { file = "Durotar\\Sun Over Senjin Village.mp3", len = 214.75, name = "Sun Over Senjin Village" },
-            { file = "Durotar\\Echo Isles Tide.mp3",         len = 198.84, name = "Echo Isles Tide" },
-            { file = "Durotar\\Stars Over Durotar.mp3",      len = 202.44, name = "Stars Over Durotar" },
-            { file = "Durotar\\Night at Kolkar Crag.mp3",    len = 243.98, name = "Night at Kolkar Crag" },
+            { file = "Durotar\\Red Dust at Noon.mp3",         len = 179.83, name = "Red Dust at Noon" },
+            { file = "Durotar\\Valley of Trials Sunrise.mp3", len = 178.80, name = "Valley of Trials Sunrise" },
+            { file = "Durotar\\Echoes Over the Canyon.mp3",   len = 180.02, name = "Echoes Over the Canyon" },
+            { file = "Durotar\\Razor Hill Stillness.mp3",     len = 179.45, name = "Razor Hill Stillness" },
+            { file = "Durotar\\Senjin Tide at Dusk.mp3",      len = 179.95, name = "Senjin Tide at Dusk" },
+            { file = "Durotar\\Embers on the Southfury.mp3",  len = 179.42, name = "Embers on the Southfury" },
         },
         -- Razor Hill inn (orcinn WMO 1849) has no tavern music. Sen'jin Village itself (area 367) plays Zone-TavernHorde outdoors
         -- too; that is a village, not a building, so only the hut is a spot (add "Sen'jin Village" to inns to go quiet in the whole village).
@@ -719,12 +749,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Redridge Mountains\\Lakeshire Stands Watch.mp3",   len = 168.60, name = "Lakeshire Stands Watch" },
-            { file = "Redridge Mountains\\Three Corners Crossing.mp3",   len = 159.98, name = "Three Corners Crossing" },
-            { file = "Redridge Mountains\\Lake Everstill at Noon.mp3",   len = 177.24, name = "Lake Everstill at Noon" },
-            { file = "Redridge Mountains\\Redridge Canyons.mp3",         len = 169.22, name = "Redridge Canyons" },
-            { file = "Redridge Mountains\\Stonewatch Keep at Night.mp3", len = 152.42, name = "Stonewatch Keep at Night" },
-            { file = "Redridge Mountains\\Renders Valley Moon.mp3",      len = 159.60, name = "Renders Valley Moon" },
+            { file = "Redridge Mountains\\Still Water at Lakeshire.mp3",    len = 194.52, name = "Still Water at Lakeshire" },
+            { file = "Redridge Mountains\\Canyon Afternoon.mp3",            len = 194.90, name = "Canyon Afternoon" },
+            { file = "Redridge Mountains\\Morning Over Lake Everstill.mp3", len = 202.03, name = "Morning Over Lake Everstill" },
+            { file = "Redridge Mountains\\Breeze by the Old Mill.mp3",      len = 212.04, name = "Breeze by the Old Mill" },
+            { file = "Redridge Mountains\\Redridge Dusk.mp3",               len = 212.47, name = "Redridge Dusk" },
+            { file = "Redridge Mountains\\Lantern Light on the Lake.mp3",   len = 199.58, name = "Lantern Light on the Lake" },
         },
         -- Subzone fallback: "Lakeshire Inn" (named row of WMO 144 set 1).
         inns = { "Lakeshire Inn" },
@@ -934,12 +964,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Stranglethorn Vale\\Heart of Stranglethorn.mp3",       len = 192.84, name = "Heart of Stranglethorn" },
-            { file = "Stranglethorn Vale\\Nesingwarys Expedition.mp3",       len = 201.19, name = "Nesingwarys Expedition" },
-            { file = "Stranglethorn Vale\\Booty Bay Sunshine.mp3",           len = 58.94, name = "Booty Bay Sunshine" },
-            { file = "Stranglethorn Vale\\Gromgol Base Camp.mp3",            len = 90.98, name = "Gromgol Base Camp" },
-            { file = "Stranglethorn Vale\\Moonlit Ruins of ZulMamwe.mp3",    len = 199.99, name = "Moonlit Ruins of ZulMamwe" },
-            { file = "Stranglethorn Vale\\Jungle Night at Kurzens Camp.mp3", len = 209.23, name = "Jungle Night at Kurzens Camp" },
+            { file = "Stranglethorn Vale\\Canopy Mist.mp3",              len = 179.76, name = "Canopy Mist" },
+            { file = "Stranglethorn Vale\\Nesingwarys Quiet Camp.mp3",   len = 198.67, name = "Nesingwarys Quiet Camp" },
+            { file = "Stranglethorn Vale\\Booty Bay Sunset.mp3",         len = 180.02, name = "Booty Bay Sunset" },
+            { file = "Stranglethorn Vale\\Gromgol Shade.mp3",            len = 180.00, name = "Gromgol Shade" },
+            { file = "Stranglethorn Vale\\Hush of the Jungle Ruins.mp3", len = 179.90, name = "Hush of the Jungle Ruins" },
+            { file = "Stranglethorn Vale\\Jungle Heartbeat.mp3",         len = 179.90, name = "Jungle Heartbeat" },
         },
         -- Subzone fallbacks: "The Salty Sailor Tavern" / "The Salty Sailor" (named rows of the Booty Bay WMO 21064).
         -- Grom'gol inn (orczeppelinhouse WMO 3113) has no tavern music.
@@ -1026,6 +1056,13 @@ local S = {
     innSpot = nil, innZone = nil, innEnter = 0, innOut = 0, innFar = 0, -- inn-spot hysteresis (latch)
     fade = nil, -- volume fade-out in progress: { orig (number), origStr, last, start, dur, ticker, finishing }
     gap = nil,  -- 0.5.1 silence between tracks (Loop music off): { start, dur, ticker }; the timer is S.timer
+    -- 0.5.3: flight lock and border delay
+    taxi = false, taxiZone = nil, -- flight lock on / the zone it keeps playing (nil = MusicPlus off for this flight)
+    inWorld = false,              -- between PLAYER_ENTERING_WORLD and PLAYER_LEAVING_WORLD (taxi state is trusted then)
+    sawGround = false,            -- not on a taxi at some point this session (else a lock = /reload or login mid-flight)
+    promptUntil = 0,              -- GetTime() until which zone changes use the prompt confirmation (loading screen, landing)
+    pendingAt = 0, pendingLong = false, -- pending switch (S.pendingSwitch): first reading, walking delay (vs. prompt)
+    stopAt = 0, stopLong = false,       -- pending stop (S.pendingStop): the same
 }
 local RefreshUI -- defined in the options section
 local RefreshNowLabel -- defined in the options section (0.5.1)
@@ -1086,6 +1123,13 @@ local function GetPlayerMapID()
     if not (C_Map and C_Map.GetBestMapForUnit) then return nil end
     local ok, id = pcall(C_Map.GetBestMapForUnit, "player")
     return ok and id or nil
+end
+
+-- 0.5.3: on a flight path? (UnitOnTaxi; false if the API is missing or errors)
+local function OnTaxi()
+    if not UnitOnTaxi then return false end
+    local ok, on = pcall(UnitOnTaxi, "player")
+    return (ok and on) and true or false
 end
 
 -- Which configured zone is the player in? (nil = none)
@@ -1162,6 +1206,7 @@ end
 
 -- Entry rule: the inn spot the player is in right now (indoors, within radius), or nil. Returns spot, distance.
 local function SpotHere(z)
+    if OnTaxi() then return nil end -- 0.5.3: an inn never starts from a flight path (flying over or near an inn)
     if not (IsIndoors and IsIndoors()) then return nil end
     return SpotNear(z, 0)
 end
@@ -1599,48 +1644,150 @@ local function FadeStopRotation(dur)
     end)
 end
 
+---------------------------------------------------------------- 0.5.3: flight lock (UnitOnTaxi)
+-- While the player is on a flight path no zone is read: the song and the rotation of the takeoff zone go on, and no
+-- inn starts (SpotHere returns nil on a taxi). The takeoff zone is saved in MusicPlusDB.taxiZone (key, or false =
+-- MusicPlus was off) so a /reload or relog mid-flight continues it.
+local function EngageTaxi()
+    local resumed = not S.sawGround and not S.active -- on a taxi since this session began: /reload or login mid-flight
+    S.taxi = true
+    S.pendingSwitch, S.pendingStop = nil, false -- readings from before takeoff don't count any more
+    S.seenState, S.seenCount = nil, 0
+    local why
+    if resumed then
+        local saved = DB.taxiZone
+        if saved == false then
+            S.taxiZone, why = nil, "reload/login mid-flight, MusicPlus was off at takeoff"
+        elseif type(saved) == "string" and ZONES[saved] then
+            S.taxiZone, why = ZONES[saved], "reload/login mid-flight, saved takeoff zone"
+        else
+            local ok, z = pcall(FindZone)
+            S.taxiZone, why = (DB.enabled and ok and z) or nil, "reload/login mid-flight, no saved takeoff zone: the zone below"
+        end
+    else
+        S.taxiZone = (S.active and not S.fade) and S.zone or nil
+        why = S.taxiZone and "took off" or "took off while MusicPlus wasn't playing"
+    end
+    DB.taxiZone = S.taxiZone and S.taxiZone.key or false
+    Debug("flight lock engaged (" .. why .. "): " .. (S.taxiZone and ("zone locked to " .. S.taxiZone.title)
+        or "MusicPlus stays off for this flight") .. "; zone changes are ignored until you land")
+end
+
+local function ReleaseTaxi(why)
+    S.taxi, S.taxiZone, DB.taxiZone = false, nil, nil
+    S.promptUntil = GetTime() + PROMPT_WINDOW -- the landing check uses the prompt ~1 s confirmation
+    S.seenState, S.seenCount = nil, 0
+    Debug("flight lock released (" .. why .. "): checking the zone")
+end
+
+-- Engage / release the lock from the current UnitOnTaxi(). Returns "locked" while it holds, "landed" right when it
+-- was released (the caller makes sure the zone is checked), nil on the ground.
+local function UpdateTaxi(why)
+    if OnTaxi() then
+        if not S.taxi then EngageTaxi() end
+        return "locked"
+    end
+    if not S.inWorld then return S.taxi and "locked" or nil end -- loading screen: decided after PLAYER_ENTERING_WORLD
+    S.sawGround = true
+    if S.taxi then ReleaseTaxi(why or "landed"); return "landed" end
+    if DB.taxiZone ~= nil then DB.taxiZone = nil end -- on the ground: no flight to resume
+    return nil
+end
+
 ---------------------------------------------------------------- zone evaluation (debounced)
 -- No-op while in the current zone and already playing (never restarts the rotation). A stop needs two
 -- "not in a configured zone / in inn" readings ~1 s apart, and so does a switch to another configured
 -- zone (e.g. Stormwind -> Elwynn at the gates), so a single glitchy zone read can't restart anything.
+-- 0.5.3: on a flight path nothing is read (flight lock). Walking over a border (a switch, or a stop because the
+-- player left the zones) needs the new place read for ZONE_SWITCH_DELAY s in a row instead; inns, /mplus off and the
+-- PROMPT_WINDOW after a loading screen or a landing keep the ~1 s rule.
+
+-- nil = prompt confirmation (second reading CONFIRM_PROMPT s later), else the walking delay in seconds
+local function SwitchDelay()
+    if GetTime() <= S.promptUntil then return nil end
+    return ZONE_SWITCH_DELAY
+end
+
+local function LongPending()
+    return (S.pendingSwitch ~= nil and S.pendingLong) or (S.pendingStop and S.stopLong)
+end
+
+-- During a walking delay every reading must agree with the pending switch (zone) or stop (nil).
+local function PendingBroken(want)
+    if S.pendingSwitch and S.pendingLong then return want ~= S.pendingSwitch end
+    if S.pendingStop and S.stopLong then return want ~= nil end
+    return false
+end
+
+-- The wanted zone right now without touching the inn state (nil = none or in an inn)
+local function ReadZone()
+    local z = FindZone()
+    if z and InInn(z) then return nil end
+    return z
+end
+
 local function Evaluate()
     S.evalTimer = nil
     local restart = S.needRestart
     S.needRestart = false
     if S.testing then return end
+    if UpdateTaxi() == "locked" and DB.enabled then -- 0.5.3 flight lock: no zone reading at all
+        if not S.active then
+            if S.taxiZone and not S.fade then StartRotation(S.taxiZone) end -- /reload mid-flight, /mplus on in flight
+        elseif restart then
+            RestartCurrent("loading screen")
+        end
+        return
+    end
     local z = DB.enabled and FindZone() or nil
     if z and not S.active and not S.innSpot then
         -- nothing playing yet (login, /reload, arriving): don't start a song just to stop it at the next poll
         local spot = SpotHere(z)
         if spot then SetInnLatch(spot, z) end
     end
-    if z and InInn(z) then z = nil end
+    local inn = false
+    if z and InInn(z) then z, inn = nil, true end
+    local delay = SwitchDelay()
     if z then
+        if S.pendingStop and S.stopLong then Debug("pending stop cancelled (" .. (z == S.zone and "back" or "now") .. " in " .. z.title .. ")") end
         S.pendingStop = false
         if S.fade then CancelFade("back in " .. z.title) end -- left the inn / came back mid-fade: keep playing
         if not S.active then S.pendingSwitch = nil; StartRotation(z)
         elseif z ~= S.zone then -- moved straight into another configured zone: its own rotation
-            if S.pendingSwitch == z then
+            if S.pendingSwitch == z and (not S.pendingLong or not delay or GetTime() - S.pendingAt >= delay - 0.001) then
                 S.pendingSwitch = nil
+                Debug("zone switch confirmed: " .. z.title)
                 StopCurrent(0, true); MuteZoneMusic(false); StartRotation(z)
+            elseif S.pendingSwitch == z then -- 0.5.3: walking, the delay isn't over yet
+                S.needRestart = restart
+                ScheduleEvaluate(delay - (GetTime() - S.pendingAt))
             else
-                S.pendingSwitch = z
+                if S.pendingSwitch then Debug("pending zone switch to " .. S.pendingSwitch.title .. " cancelled (now in " .. z.title .. ")") end
+                S.pendingSwitch, S.pendingAt, S.pendingLong = z, GetTime(), delay ~= nil
+                Debug(("pending zone switch started: %s -> %s (%s)"):format(S.zone.title, z.title,
+                    delay and (delay .. " s in the new zone") or "prompt: loading screen / landing"))
                 S.needRestart = restart -- keep a pending loading-screen replay if we end up staying
-                ScheduleEvaluate(1.0)
+                ScheduleEvaluate(delay or CONFIRM_PROMPT)
             end
         else
+            if S.pendingSwitch then Debug("pending zone switch to " .. S.pendingSwitch.title .. " cancelled (still in " .. z.title .. "), the song goes on") end
             S.pendingSwitch = nil
             if restart then RestartCurrent("loading screen") end
         end
     elseif S.active then
+        if S.pendingSwitch then Debug("pending zone switch to " .. S.pendingSwitch.title .. " cancelled (" .. (inn and "inn" or "outside the zones") .. ")") end
         S.pendingSwitch = nil
         if S.fade then return end -- already fading out
-        if S.pendingStop or not DB.enabled then
+        if inn or not DB.enabled then delay = nil end -- inns (and /mplus off) keep their 0.5.2 timing
+        if not DB.enabled or (S.pendingStop and (not S.stopLong or not delay or GetTime() - S.stopAt >= delay - 0.001)) then
             S.pendingStop = false
             FadeStopRotation((DB.enabled and S.zone and InInn(S.zone)) and FADE_INN or FADE_LEAVE)
+        elseif S.pendingStop then -- 0.5.3: walking out of the zones, the delay isn't over yet
+            ScheduleEvaluate(delay - (GetTime() - S.stopAt))
         else
-            S.pendingStop = true
-            ScheduleEvaluate(1.0)
+            S.pendingStop, S.stopAt, S.stopLong = true, GetTime(), delay ~= nil
+            if delay then Debug(("pending stop started: left %s (%d s outside the zones)"):format(S.zone and S.zone.title or "?", delay)) end
+            ScheduleEvaluate(delay or CONFIRM_PROMPT)
         end
     end
 end
@@ -1662,10 +1809,20 @@ local function WantedZone()
 end
 
 local function PollPosition()
+    local taxi = UpdateTaxi() -- 0.5.3: flight lock (engaged on takeoff, released on landing)
+    if taxi == "landed" then ScheduleEvaluate(0) end
     if not DB.enabled or S.testing then S.seenState, S.seenCount = nil, 0; SetInnLatch(nil); return end
+    if taxi == "locked" then -- in flight: only the inn exit rules run (no entry on a taxi), never a zone decision
+        S.seenState, S.seenCount = nil, 0
+        pcall(function() UpdateInnLatch(FindZone()) end)
+        return
+    end
     local ok, want, changed = pcall(WantedZone)
     if not ok then return end
-    if S.evalTimer then S.seenState, S.seenCount = nil, 0; return end
+    if S.evalTimer then
+        if PendingBroken(want) then ScheduleEvaluate(0) end -- 0.5.3: walking delay needs the same reading all along
+        S.seenState, S.seenCount = nil, 0; return
+    end
     local have = (S.active and not S.fade) and S.zone or nil -- fading out = already on its way to "nothing"
     if want == have then S.seenState, S.seenCount = nil, 0; return end
     local key = want and want.key or "none"
@@ -1724,7 +1881,9 @@ end
 
 local function SetEnabled(on)
     DB.enabled = on and true or false
-    if on then ScheduleEvaluate(0.1)
+    if on then
+        if S.taxi and S.fade and not S.fade.finishing then CancelFade("on again in flight") end -- 0.5.3: no zone check in flight
+        ScheduleEvaluate(0.1)
     else
         if S.testing then StopTest() end
         if S.active then FadeStopRotation(FADE_LEAVE) else StopRotation(FADE_MS, true) end
@@ -1877,7 +2036,7 @@ local function MakeWindow(name, width, height, title)
 end
 
 local function CreateOptionsWindow()
-    local f = MakeWindow("MusicPlusOptionsFrame", 340, 262, "MusicPlus 0.5.2")
+    local f = MakeWindow("MusicPlusOptionsFrame", 340, 262, "MusicPlus 0.5.6")
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, relPoint, px, py = self:GetPoint()
@@ -1988,8 +2147,15 @@ local function Status()
     local yn = function(b) return b and "|cff40ff40yes|r" or "|cffff4040no|r" end
     Print(("Enabled: %s  Active: %s  Testing: %s  Mode: %s"):format(yn(DB.enabled), yn(S.active), yn(S.testing), DB.mode))
     local z = FindZone()
-    Print(("Configured zone: %s  Playing for: %s  mapID: %s (%s)"):format(z and z.title or "none",
-        S.zone and S.zone.title or "-", tostring(mapID), info and info.name or "?"))
+    Print(("Configured zone: %s  Playing for: %s  mapID: %s (%s)%s"):format(z and z.title or "none",
+        S.zone and S.zone.title or "-", tostring(mapID), info and info.name or "?", S.taxi and "  (on flight path, zone locked)" or ""))
+    if S.pendingSwitch and S.pendingLong then -- 0.5.3
+        Print(("Zone switch pending: %s in %d s (going back cancels it)"):format(S.pendingSwitch.title,
+            math.max(0, math.ceil(ZONE_SWITCH_DELAY - (GetTime() - S.pendingAt)))))
+    elseif S.pendingStop and S.stopLong then
+        Print(("Left the zones: the music stops in %d s (going back cancels it)"):format(
+            math.max(0, math.ceil(ZONE_SWITCH_DELAY - (GetTime() - S.stopAt)))))
+    end
     Print(("Zone: %s, Real: %s, Subzone: \"%s\""):format(GetZoneText() or "", GetRealZoneText() or "", GetSubZoneText() or ""))
     if z then
         Print(("%s: %d original + %d custom songs in the rotation"):format(z.title, #z.origTracks, #z.customTracks))
@@ -2161,6 +2327,8 @@ f:RegisterEvent("PLAYER_LEAVING_WORLD")
 f:RegisterEvent("SOUND_DEVICE_UPDATE")
 f:RegisterEvent("CVAR_UPDATE")
 f:RegisterEvent("PLAYER_REGEN_ENABLED") -- 0.5.2: welcome window waits for the end of combat
+f:RegisterEvent("PLAYER_CONTROL_LOST")   -- 0.5.3: flight lock (taxi takeoff; the poll checks UnitOnTaxi too)
+f:RegisterEvent("PLAYER_CONTROL_GAINED") -- 0.5.3: landing
 f:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ADDON_LOADED" and arg1 == ADDON then
         if type(MusicPlusDB) ~= "table" then MusicPlusDB = {} end
@@ -2190,8 +2358,11 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
         StopCurrent(0) -- also fires on /reload; the rotation restarts after the reload
         FinishMusicRestore() -- never leave Music switched off
     elseif event == "PLAYER_LEAVING_WORLD" then
+        S.inWorld = false -- 0.5.3: taxi state isn't trusted until PLAYER_ENTERING_WORLD
         CancelFade("loading screen") -- keep playing; the zone check after loading decides again
     elseif event == "PLAYER_ENTERING_WORLD" then
+        S.inWorld = true
+        S.promptUntil = GetTime() + PROMPT_WINDOW -- 0.5.3: a teleport is a real move: prompt ~1 s confirmation
         S.needRestart = true -- music stops on loading screens: replay the current track if still in the zone
         ScheduleEvaluate(1.0)
         if not welcomeChecked then -- 0.5.2: first loading screen of the session only (login or /reload)
@@ -2200,8 +2371,13 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
         end
     elseif event == "PLAYER_REGEN_ENABLED" then
         if welcomePending then MaybeShowWelcome() end
+    elseif event == "PLAYER_CONTROL_LOST" or event == "PLAYER_CONTROL_GAINED" then -- 0.5.3
+        if UpdateTaxi(event) == "landed" then ScheduleEvaluate(0) end
     else
-        ScheduleEvaluate(DEBOUNCE)
+        -- 0.5.3: during a walking delay, a zone event that reads any other place breaks it at once
+        local ok, want = true, nil
+        if LongPending() then ok, want = pcall(ReadZone) end
+        if ok and PendingBroken(want) then ScheduleEvaluate(0) else ScheduleEvaluate(DEBOUNCE) end
     end
 end)
 
@@ -2213,4 +2389,4 @@ f:SetScript("OnUpdate", function()
     lastFrame = now
 end)
 
-Print("v0.5.2 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
+Print("v0.5.6 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")

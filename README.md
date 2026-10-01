@@ -3,7 +3,7 @@
 **Additional zone music for WoW Forever (Classic 1.60.1).** MusicPlus adds 144 new songs: 6 per zone across 24 zones, covering all 6 classic capitals plus 18 Alliance and Horde zones from level 1 to 45. Each new song is written around the mood of its zone. Each zone plays its original Classic tracks first, then its 6 new songs, shuffled and blended seamlessly. Inns with their own tavern music keep it, unchanged, and you can choose between continuous music or the original experience, with gaps of silence between songs.
 
 - Client: WoW Forever (classic-style beta), version 1.60.1, TOC Interface `16001`
-- Current version: **0.5.2**
+- Current version: **0.5.6**
 
 > **Get the addon from the [Releases page](https://github.com/wowmusicplus/MusicPlus/releases/latest)**, not the green **Code** button. The Code download is only the source and has **no songs** in it.
 
@@ -40,7 +40,7 @@ Zones that share music in the game share the same originals. For example, Elwynn
 
 ## Install
 
-1. Go to the **[Releases page](https://github.com/wowmusicplus/MusicPlus/releases/latest)** and download **`MusicPlus-v0.5.2.zip`** (under *Assets*).
+1. Go to the **[Releases page](https://github.com/wowmusicplus/MusicPlus/releases/latest)** and download **`MusicPlus-v0.5.6.zip`** (under *Assets*).
    Don't use the green **Code → Download ZIP** button: that one has no songs.
 2. Extract the zip into your WoW Forever AddOns folder so the path looks exactly like this:
    ```
@@ -48,7 +48,7 @@ Zones that share music in the game share the same originals. For example, Elwynn
    ```
    The zip already contains the `MusicPlus` folder, so extract it straight into `AddOns`. Make sure you don't end up with `MusicPlus\MusicPlus\...`.
 3. Start the game. At character select, click **AddOns** and make sure **MusicPlus** is enabled (tick *Load out of date AddOns* if it's listed as out of date).
-4. Log in. You should see `MusicPlus: v0.5.2 loaded (24 zones)` in chat, and a welcome window pops up once.
+4. Log in. You should see `MusicPlus: v0.5.6 loaded (24 zones)` in chat, and a welcome window pops up once.
 
 **Nothing to hear?** Check that the game's Music is turned on and its volume is up. `/mplus status` warns you if Music is off. `/mplus test` plays one of the custom songs anywhere, as a quick check.
 
@@ -131,7 +131,7 @@ Good to know:
 
 ## Quick check (optional)
 
-1. `/reload`: chat says `MusicPlus: v0.5.2 loaded (24 zones)`.
+1. `/reload`: chat says `MusicPlus: v0.5.6 loaded (24 zones)`.
 2. `/mplus titles on`, then walk into Stormwind: `Now playing: ... (Original 1/8)`. Use `/mplus skip` to get to the custom songs (`Custom 1/6`).
 3. Walk into the Slaughtered Lamb bar or the Lion's Pride Inn: the song fades out and tavern music plays. Walk back out: a new rotation starts.
 4. Untick **Loop music** and let a song end: silence with a countdown in the window, then the next song 3–5 minutes later.

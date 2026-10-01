@@ -2,6 +2,13 @@
 
 All notable changes to MusicPlus. Versions are for WoW Forever 1.60.1 (Interface 16001).
 
+## 0.5.6
+
+Changes since 0.5.2:
+
+- Updated music in various zones to improve their themes.
+- Flight path fix: music no longer switches zones while you're on a flight path; it checks your zone shortly after landing. Walking across a zone border now waits a few seconds before switching, so brief border crossings don't interrupt the music.
+
 ## 0.5.2
 
 - New **"Welcome to MusicPlus"** window, shown once, about 2 seconds after the first loading screen (after combat if you're fighting). It has one line on what MusicPlus does, plus the **Loop music**, **Show song titles** and **background sound** options with short descriptions. These are the same settings as in `/mplus` and Options → AddOns, kept in sync. It ends with the note "Type /mplus at any time to open the options window again." and a **Got it** button (X and Escape close it too).
