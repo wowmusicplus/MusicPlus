@@ -2,6 +2,11 @@
 
 All notable changes to MusicPlus. Versions are for WoW Forever 1.60.1 (Interface 16001).
 
+## 0.5.7
+
+- Combined the welcome and options windows into one window, opened with `/mplus`.
+- Added a Leveling Zone Music option: play music from just the current zone, or from all leveling zones. Also available as `/mplus pool zone` or `/mplus pool all`.
+
 ## 0.5.6
 
 Changes since 0.5.2:

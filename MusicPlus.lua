@@ -1,4 +1,19 @@
---[[ MusicPlus 0.5.6 (24 zones: 6 capitals and 18 zones, Alliance and Horde, levels 1-45) for WoW: Forever 1.60.1 (Interface 16001)
+--[[ MusicPlus 0.5.7 (24 zones: 6 capitals and 18 zones, Alliance and Horde, levels 1-45) for WoW: Forever 1.60.1 (Interface 16001)
+0.5.7: one window and a "Leveling Zone Music" setting (music timing, inns, fades, flights and zone detection unchanged).
+ * The welcome window and the options window are now ONE window (MusicPlusOptionsFrame, title "MusicPlus 0.5.7"):
+   "Welcome to MusicPlus" + the intro line, Enable, background sound, Loop music and Show song titles (each of the
+   last three with its welcome description), the Leveling Zone Music dropdown, the volume slider, Skip + the song
+   playing now, the "/mplus at any time" note and the Got it button. /mplus (no argument) opens / closes it;
+   /mplus welcome opens it; it still pops up once by itself (WELCOME_DELAY s after the first loading screen,
+   after combat) unless MusicPlusDB.welcomeShown is set, and showing it (any way) sets the flag. The separate
+   welcome window (MusicPlusWelcomeFrame) is gone. The Settings > AddOns panel is unchanged.
+ * "Leveling Zone Music" (MusicPlusDB.pool, default "zone" = exactly 0.5.6): "all" = in the 18 leveling zones
+   (every zone that isn't one of the 6 CAPITALS) the customs part of the rotation is the custom songs of ALL 18
+   leveling zones together (108), shuffled; the zone's own originals still come first, other zones' originals
+   are never added. Capitals always play only their own originals and customs, and capital customs are never in
+   the shared pool. Changing it while a leveling zone plays leaves the current song (or silence) alone and redoes
+   only the part of the rotation that hasn't played yet (RebuildPool); the next round uses the new pool from the
+   start. /mplus pool [zone/all] does the same from chat.
 0.5.6: Calmer reworked music for Thunder Bluff, Dun Morogh, Durotar, Stranglethorn Vale, Stormwind (4 new songs) and Orgrimmar (data only: the customs entries of those 6 zones; nothing else changed).
 0.5.5: Undercity: 5 new custom songs replace 5 of the 6 old ones; Apothecarium Whispers kept (data only: the 5 Undercity customs entries; nothing else changed).
 0.5.4: Redridge Mountains: 6 new calmer custom songs (data only: the 6 Redridge customs entries; nothing else changed).
@@ -104,9 +119,9 @@ cancelled, the song keeps playing), /mplus off/mode/test, loading screens (PLAYE
 /reload (PLAYER_LOGOUT). It's also kept in MusicPlusDB.fadeVolume while fading and restored at the next load
 if the client crashed mid-fade. A volume change during a fade (our slider or Blizzard's) becomes the new
 saved volume; the options slider always shows the saved volume, never the fading one.
-SavedVariables MusicPlusDB (bgSound, enabled, mode, window position, innSpots, fadeVolume, loop, titles, welcomeShown). The beta may not restore
+SavedVariables MusicPlusDB (bgSound, enabled, mode, window position, innSpots, fadeVolume, loop, titles, welcomeShown, pool). The beta may not restore
 SavedVariables; then the defaults apply every login (enabled, mode "music", background sound turned ON, Loop music ON,
-song titles OFF). ]]
+song titles OFF, Leveling Zone Music "For this zone only"). ]]
 
 local ADDON = "MusicPlus"
 local ADDON_DIR = "Interface\\AddOns\\MusicPlus\\"
@@ -1016,6 +1031,21 @@ for key, z in pairs(ZONES) do
     end
 end
 
+-- 0.5.7: "Leveling Zone Music". The capitals keep their own music whatever the setting; every other zone is a
+-- leveling zone (starting zones included). ALL_LEVELING_CUSTOMS = the custom songs of every leveling zone, in
+-- ZONE_ORDER (shuffled when a rotation is built), the pool used with MusicPlusDB.pool = "all".
+local CAPITALS = { stormwind = true, ironforge = true, darnassus = true, orgrimmar = true, ["thunder-bluff"] = true, undercity = true }
+local POOL_VALUES = { "zone", "all" }
+local POOL_LABELS = { zone = "For this zone only", all = "Play music from all zones" }
+local ALL_LEVELING_CUSTOMS = {}
+for _, key in ipairs(ZONE_ORDER) do
+    local z = ZONES[key]
+    z.city = CAPITALS[key] == true
+    if not z.city then
+        for _, t in ipairs(z.customTracks) do ALL_LEVELING_CUSTOMS[#ALL_LEVELING_CUSTOMS + 1] = t end
+    end
+end
+
 -- Map sizes in yards (fallback if C_Map.GetMapWorldSize is missing), from the Forever 1.60.1 UiMapAssignment
 -- rectangles; a retail ID is listed only where its rectangle is identical (so the same x, y work on it).
 local MAP_YARDS = {
@@ -1043,7 +1073,7 @@ local INN_EXIT_EXTRA = 10    -- yards added to a spot's radius: the inn state ho
 local INN_EXIT_OUTDOORS = 5  -- polls in a row outdoors (2.5 s) before the inn state ends
 local INN_EXIT_FAR = 2       -- polls in a row beyond radius + INN_EXIT_EXTRA before the inn state ends
 
-local DB = { enabled = true, mode = "music", bgSound = true, loop = true, titles = false } -- replaced by MusicPlusDB on ADDON_LOADED
+local DB = { enabled = true, mode = "music", bgSound = true, loop = true, titles = false, pool = "zone" } -- replaced by MusicPlusDB on ADDON_LOADED
 
 local S = {
     active = false, testing = false, rotation = nil, pos = 0, track = nil, handle = nil,
@@ -1069,6 +1099,13 @@ local RefreshNowLabel -- defined in the options section (0.5.1)
 local ScheduleEvaluate -- defined in the zone evaluation section
 
 local function Print(msg) DEFAULT_CHAT_FRAME:AddMessage(PREFIX .. tostring(msg)) end
+
+-- 0.5.7: the custom songs of zone z's rotation: its own, or (Leveling Zone Music = all, leveling zone) every
+-- leveling zone's. A capital always gets its own.
+local function CustomPool(z)
+    if DB.pool == "all" and not z.city then return ALL_LEVELING_CUSTOMS end
+    return z.customTracks
+end
 local function Debug(msg) if S.debug then Print("|cff999999[debug]|r " .. tostring(msg)) end end
 
 local function CVarGet(name)
@@ -1394,7 +1431,7 @@ end
 -- All originals (shuffled), then all customs (shuffled). The song that played last (loop boundary or
 -- re-entry) is never first: if the shuffle puts it there, it's swapped with another song of its group.
 local function BuildRotation(z)
-    local orig, cust = Shuffled(z.origTracks), Shuffled(z.customTracks)
+    local orig, cust = Shuffled(z.origTracks), Shuffled(CustomPool(z)) -- 0.5.7: the customs pool (setting)
     local first = (#orig > 0) and orig or cust
     if #first > 1 and first[1].file == S.lastFile then
         local j = math.random(2, #first)
@@ -1453,7 +1490,7 @@ local function NextPosLabel()
     if S.pos + 1 <= #S.rotation then return PosLabel(S.pos + 1) end
     local nO = S.zone and #S.zone.origTracks or 0
     if nO > 0 then return ("Original 1/%d"):format(nO) end
-    return ("Custom 1/%d"):format(S.zone and #S.zone.customTracks or 0)
+    return ("Custom 1/%d"):format(S.zone and #CustomPool(S.zone) or 0)
 end
 
 local function GapLeft()
@@ -1903,14 +1940,42 @@ local function SetTitles(on)
     RefreshUI()
 end
 
+-- 0.5.7: the Leveling Zone Music setting changed while a leveling zone's rotation runs. The song (or silence) that's
+-- on goes on untouched (no restart, its timer and S.gen stay); only what hasn't played yet is redone: the originals
+-- keep their places, the customs part becomes a fresh shuffle of the new pool minus the customs already played this
+-- round (and the current one). The next round (BuildRotation) uses the new pool from the start.
+local function RebuildPool()
+    local r, z = S.rotation, S.zone
+    local keep = math.max(S.pos, S.nOrig)
+    local newR, done = {}, {}
+    for i = 1, math.min(keep, #r) do newR[i] = r[i]; done[r[i].file] = true end
+    local rest = {}
+    for _, t in ipairs(CustomPool(z)) do if not done[t.file] then rest[#rest + 1] = t end end
+    for _, t in ipairs(Shuffled(rest)) do newR[#newR + 1] = t end
+    S.rotation, S.nCustom = newR, #newR - S.nOrig
+    Debug(("customs pool for %s: %d songs (%s); %d left this round"):format(z.title, #CustomPool(z),
+        DB.pool == "all" and "all leveling zones" or "this zone only", #newR - S.pos))
+end
+
+local function SetPool(value)
+    value = (value == "all") and "all" or "zone"
+    local changed = DB.pool ~= value
+    DB.pool = value
+    if changed and S.active and not S.testing and S.zone and not S.zone.city and S.rotation then RebuildPool() end
+    RefreshUI()
+end
+
 ---------------------------------------------------------------- options UI
 -- Templates (all verified in the Forever 1.60.1 UI source): BasicFrameTemplateWithInset (TitleText,
 -- CloseButton), UICheckButtonTemplate (.Text), UISliderTemplateWithLabels (.Text/.Low/.High),
--- UIPanelButtonTemplate. The window is in UISpecialFrames so Escape closes it.
+-- UIPanelButtonTemplate, UIDropDownMenuTemplate + UIDropDownMenu_Initialize / _CreateInfo / _AddButton /
+-- _SetWidth / _SetText and CloseDropDownMenus (Blizzard_SharedXML UIDropDownMenu.lua, loaded for every client
+-- family). The window is in UISpecialFrames so Escape closes it.
+-- 0.5.7: the 0.5.2 welcome window and the options window are one window, MusicPlusOptionsFrame.
 local controlSets, optionsFrame = {}, nil
-local welcomeSet, welcomeFrame = nil, nil -- 0.5.2: the welcome window's checkboxes { loop, titles, bg } and frame
+local WIN_W, WIN_H = 440, 610 -- 0.5.7: the merged window (everything fits with room to spare, see the layout below)
 
--- Background sound checkbox (all three places): set the CVar, then show it everywhere (0.5.2: RefreshUI added)
+-- Background sound checkbox (window and Settings panel): set the CVar, then show it everywhere (0.5.2: RefreshUI added)
 local function OnBgClick(self)
     SetBgSound(self:GetChecked())
     RefreshUI()
@@ -1926,37 +1991,107 @@ local function Tooltip(widget, title, text)
     widget:SetScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
-local function BuildControls(parent, prefix, x, y)
+-- 0.5.7: a short grey description under a checkbox (the 0.5.2 welcome style); only in the window, not the panel
+local function AddDesc(parent, anchor, dx, dy, text)
+    local d = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    d:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", dx, dy)
+    d:SetWidth(WIN_W - 70)
+    d:SetJustifyH("LEFT")
+    d:SetTextColor(0.75, 0.75, 0.75)
+    d:SetText(text)
+    return d
+end
+
+-- 0.5.7: the Leveling Zone Music dropdown (Classic-era UIDropDownMenu API). If that API were missing, a plain button
+-- that switches between the two choices takes its place, so the window always builds.
+local function PoolMenu(_, level)
+    for _, v in ipairs(POOL_VALUES) do
+        local info = UIDropDownMenu_CreateInfo()
+        info.text, info.value = POOL_LABELS[v], v
+        info.checked = (DB.pool == v)
+        info.func = function() SetPool(v); if CloseDropDownMenus then CloseDropDownMenus() end end
+        UIDropDownMenu_AddButton(info, level)
+    end
+end
+
+local function BuildPoolDropDown(parent, name)
+    if UIDropDownMenu_Initialize and UIDropDownMenu_CreateInfo and UIDropDownMenu_AddButton and UIDropDownMenu_SetText then
+        local dd = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
+        if UIDropDownMenu_SetWidth then UIDropDownMenu_SetWidth(dd, 200) end
+        UIDropDownMenu_Initialize(dd, PoolMenu)
+        dd.SetChoice = function(self, v) UIDropDownMenu_SetText(self, POOL_LABELS[v]) end
+        return dd, -16 -- the template's left border art is ~16 px of padding
+    end
+    local b = CreateFrame("Button", name, parent, "UIPanelButtonTemplate")
+    b:SetSize(200, 22)
+    b:SetScript("OnClick", function() SetPool(DB.pool == "all" and "zone" or "all") end)
+    b.SetChoice = function(self, v) self:SetText(POOL_LABELS[v]) end
+    return b, 0
+end
+
+-- opts (0.5.7, the window only): anchor = region to start under, descs = { bg, loop, titles } descriptions,
+-- pool = add the Leveling Zone Music dropdown, bigLabels = checkbox labels in GameFontNormal (welcome style).
+-- Without opts (the Settings panel) the layout is exactly 0.5.6's.
+local function BuildControls(parent, prefix, x, y, opts)
+    opts = opts or {}
+    local descs = opts.descs or {}
     local c = {}
+    -- the next control goes under `last` (a checkbox, or a description lastCol px right of the checkbox column)
+    local last, lastIsDesc, lastCol = nil, false, 0
+    local function place(w)
+        w:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0 - lastCol, lastIsDesc and -6 or -2)
+    end
+    local function after(cb, desc)
+        if opts.bigLabels then cb.Text:SetFontObject("GameFontNormal") end
+        if desc then cb.desc = AddDesc(parent, cb, 26, 3, desc); last, lastIsDesc, lastCol = cb.desc, true, 26
+        else last, lastIsDesc, lastCol = cb, false, 0 end
+    end
+
     c.enable = CreateFrame("CheckButton", prefix .. "Enable", parent, "UICheckButtonTemplate")
-    c.enable:SetPoint("TOPLEFT", x, y)
+    if opts.anchor then c.enable:SetPoint("TOPLEFT", opts.anchor, "BOTTOMLEFT", x, y) else c.enable:SetPoint("TOPLEFT", x, y) end
     c.enable.Text:SetText("Enable MusicPlus (" .. #ZONE_ORDER .. " zones)")
     c.enable:SetScript("OnClick", function(self) SetEnabled(self:GetChecked()) end)
+    after(c.enable, nil)
 
     c.bg = CreateFrame("CheckButton", prefix .. "BgSound", parent, "UICheckButtonTemplate")
-    c.bg:SetPoint("TOPLEFT", c.enable, "BOTTOMLEFT", 0, -2)
+    place(c.bg)
     c.bg.Text:SetText("Play music when game is in background")
     c.bg:SetScript("OnClick", OnBgClick)
     Tooltip(c.bg, "Sound in Background", "Sets the game's \"Sound in Background\" option (" .. BG_CVAR ..
         "). On by default so alt-tabbing doesn't cut the music. It applies to all game sound.")
+    after(c.bg, descs.bg)
 
     c.loop = CreateFrame("CheckButton", prefix .. "Loop", parent, "UICheckButtonTemplate")
-    c.loop:SetPoint("TOPLEFT", c.bg, "BOTTOMLEFT", 0, -2)
+    place(c.loop)
     c.loop.Text:SetText("Loop music (no silence between songs)")
     c.loop:SetScript("OnClick", function(self) SetLoop(self:GetChecked()) end)
     Tooltip(c.loop, "Loop music", "On (default): the next song starts as soon as one ends. Off: like the game's own " ..
         "music with its Loop Music option off, " .. GAP_MIN / 60 .. "-" .. GAP_MAX / 60 .. " minutes of silence between songs " ..
         "(the game's zone music stays quiet too). The game's own Loop Music option isn't changed.")
+    after(c.loop, descs.loop)
 
     c.titles = CreateFrame("CheckButton", prefix .. "Titles", parent, "UICheckButtonTemplate")
-    c.titles:SetPoint("TOPLEFT", c.loop, "BOTTOMLEFT", 0, -2)
+    place(c.titles)
     c.titles.Text:SetText("Show song titles in chat")
     c.titles:SetScript("OnClick", function(self) SetTitles(self:GetChecked()) end)
     Tooltip(c.titles, "Show song titles", "Prints \"Now playing: <song> (Original 3/8)\" in chat at every song change. " ..
         "Off by default. The line below and /mplus status always show the current song.")
+    after(c.titles, descs.titles)
+
+    if opts.pool then -- 0.5.7: Leveling Zone Music
+        c.poolLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        c.poolLabel:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 4 - lastCol, -12)
+        c.poolLabel:SetText("Leveling Zone Music")
+        local dx
+        c.pool, dx = BuildPoolDropDown(parent, prefix .. "Pool")
+        c.pool:SetPoint("TOPLEFT", c.poolLabel, "BOTTOMLEFT", dx, -4)
+        c.poolDesc = AddDesc(parent, c.poolLabel, 0, -40, "All zones: a leveling zone plays its own original tracks, then " ..
+            "custom songs from all " .. (#ZONE_ORDER - 6) .. " leveling zones. Cities always keep their own music.")
+        last, lastIsDesc, lastCol = c.poolDesc, true, 4
+    end
 
     c.vol = CreateFrame("Slider", prefix .. "Volume", parent, "UISliderTemplateWithLabels")
-    c.vol:SetPoint("TOPLEFT", c.titles, "BOTTOMLEFT", 8, -26)
+    c.vol:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 8 - lastCol, lastIsDesc and -28 or -26)
     c.vol:SetWidth(220)
     c.vol:SetMinMaxValues(0, 100)
     c.vol:SetValueStep(1)
@@ -2005,20 +2140,16 @@ function RefreshUI()
         c.bg:SetChecked(CVarGet(BG_CVAR) ~= "0")
         c.loop:SetChecked(DB.loop)
         c.titles:SetChecked(DB.titles)
+        if c.pool then c.pool:SetChoice(DB.pool) end -- 0.5.7
         c.vol.refreshing = true
         c.vol:SetValue(GetVolumePercent())
         c.vol.refreshing = false
         c.skip:SetEnabled(S.active)
     end
-    if welcomeSet then -- 0.5.2
-        welcomeSet.loop:SetChecked(DB.loop)
-        welcomeSet.titles:SetChecked(DB.titles)
-        welcomeSet.bg:SetChecked(CVarGet(BG_CVAR) ~= "0")
-    end
     RefreshNowLabel()
 end
 
--- 0.5.2: the common window frame (options window and welcome window): movable, clamped, X and Escape close it
+-- 0.5.2: the common window frame: movable, clamped, X and Escape close it
 local function MakeWindow(name, width, height, title)
     local f = CreateFrame("Frame", name, UIParent, "BasicFrameTemplateWithInset")
     f:SetSize(width, height)
@@ -2035,8 +2166,12 @@ local function MakeWindow(name, width, height, title)
     return f
 end
 
+-- 0.5.7: THE window (options menu + the 0.5.2 welcome). Layout, top to bottom (WIN_W x WIN_H):
+--   "Welcome to MusicPlus" heading, intro line | Enable | Background sound + description | Loop music + description |
+--   Show song titles + description | "Leveling Zone Music" label, dropdown, description | Music volume slider |
+--   Skip + song playing now | "/mplus at any time" note | Got it (bottom center). X / Escape / Got it close it.
 local function CreateOptionsWindow()
-    local f = MakeWindow("MusicPlusOptionsFrame", 340, 262, "MusicPlus 0.5.6")
+    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.7")
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, relPoint, px, py = self:GetPoint()
@@ -2044,86 +2179,65 @@ local function CreateOptionsWindow()
     end)
     local p = DB.pos
     if type(p) == "table" and p[1] then f:SetPoint(p[1], UIParent, p[2], p[3], p[4]) else f:SetPoint("CENTER") end
-    BuildControls(f, "MusicPlusOpt", 14, -32)
-    f:SetScript("OnShow", RefreshUI)
+    f.heading = f:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    f.heading:SetPoint("TOPLEFT", 16, -32)
+    f.heading:SetText("Welcome to MusicPlus")
+    f.intro = f:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    f.intro:SetPoint("TOPLEFT", f.heading, "BOTTOMLEFT", 0, -6)
+    f.intro:SetWidth(WIN_W - 32)
+    f.intro:SetJustifyH("LEFT")
+    f.intro:SetText("MusicPlus plays each zone's original Classic music plus custom songs in a shuffled rotation, " ..
+        "and leaves inn music untouched wherever the game has it.")
+    local c = BuildControls(f, "MusicPlusOpt", -4, -6, {
+        anchor = f.intro, pool = true, bigLabels = true,
+        descs = {
+            bg = "On (default): the music keeps playing when the game window isn't focused. " ..
+                "It sets the game's \"Sound in Background\" option.",
+            loop = "On (default): songs play back to back. Off: a random " .. GAP_MIN / 60 .. "-" .. GAP_MAX / 60 ..
+                " minute silence between songs, like the game's own zone music.",
+            titles = "Off (default). When on, a \"Now playing\" line appears in chat each time a new song starts.",
+        },
+    })
+    f.controls = c
+    local note = f:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    note:SetPoint("TOPLEFT", c.skip, "BOTTOMLEFT", 4, -14)
+    note:SetWidth(WIN_W - 32)
+    note:SetJustifyH("LEFT")
+    note:SetText("Type /mplus at any time to open this window again.")
+    f.note = note
+    local ok = CreateFrame("Button", "MusicPlusOptOK", f, "UIPanelButtonTemplate")
+    ok:SetSize(100, 22)
+    ok:SetPoint("BOTTOM", 0, 14)
+    ok:SetText("Got it")
+    ok:SetScript("OnClick", function() f:Hide() end)
+    f:SetScript("OnShow", function()
+        DB.welcomeShown = true -- 0.5.2: set the moment it's shown: /reload or logout with the window open won't repeat it
+        RefreshUI()
+    end)
+    f:SetScript("OnHide", function() if CloseDropDownMenus then CloseDropDownMenus() end end)
     return f
 end
 
+-- /mplus welcome, the first-login popup: open (never toggles it off)
+local function ShowOptions()
+    optionsFrame = optionsFrame or CreateOptionsWindow()
+    optionsFrame:Show()
+end
+
+-- /mplus: open / close
 local function ToggleOptions()
     optionsFrame = optionsFrame or CreateOptionsWindow()
     if optionsFrame:IsShown() then optionsFrame:Hide() else optionsFrame:Show() end
 end
 
----------------------------------------------------------------- 0.5.2: welcome window (shown once)
--- A checkbox (same template and setters as the options window) with a short grey description under it.
-local function WelcomeOption(parent, name, anchor, dy, label, desc, onClick)
-    local cb = CreateFrame("CheckButton", name, parent, "UICheckButtonTemplate")
-    cb:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", anchor == parent.intro and -4 or -26, dy)
-    cb.Text:SetText(label)
-    cb.Text:SetFontObject("GameFontNormal")
-    cb:SetScript("OnClick", onClick)
-    local d = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    d:SetPoint("TOPLEFT", cb, "BOTTOMLEFT", 26, 3)
-    d:SetWidth(352)
-    d:SetJustifyH("LEFT")
-    d:SetTextColor(0.75, 0.75, 0.75)
-    d:SetText(desc)
-    cb.desc = d
-    return cb, d
-end
-
-local function CreateWelcomeWindow()
-    local f = MakeWindow("MusicPlusWelcomeFrame", 420, 340, "Welcome to MusicPlus")
-    f:SetPoint("CENTER")
-    f.intro = f:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    f.intro:SetPoint("TOPLEFT", 16, -34)
-    f.intro:SetWidth(388)
-    f.intro:SetJustifyH("LEFT")
-    f.intro:SetText("MusicPlus plays each zone's original Classic music plus custom songs in a shuffled rotation, " ..
-        "and leaves inn music untouched wherever the game has it.")
-    local w = {}
-    local d
-    w.loop, d = WelcomeOption(f, "MusicPlusWelcomeLoop", f.intro, -8, "Loop music",
-        "On (default): songs play back to back. Off: a random " .. GAP_MIN / 60 .. "-" .. GAP_MAX / 60 ..
-        " minute silence between songs, like the game's own zone music.",
-        function(self) SetLoop(self:GetChecked()) end)
-    w.titles, d = WelcomeOption(f, "MusicPlusWelcomeTitles", d, -6, "Show song titles in chat",
-        "Off (default). When on, a \"Now playing\" line appears in chat each time a new song starts.",
-        function(self) SetTitles(self:GetChecked()) end)
-    w.bg, d = WelcomeOption(f, "MusicPlusWelcomeBgSound", d, -6, "Play music when game is in background",
-        "On (default): the music keeps playing when the game window isn't focused. " ..
-        "It sets the game's \"Sound in Background\" option.", OnBgClick)
-    local note = f:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    note:SetPoint("TOPLEFT", d, "BOTTOMLEFT", -22, -14)
-    note:SetWidth(388)
-    note:SetJustifyH("LEFT")
-    note:SetText("Type /mplus at any time to open the options window again.")
-    f.note = note
-    local ok = CreateFrame("Button", "MusicPlusWelcomeOK", f, "UIPanelButtonTemplate")
-    ok:SetSize(100, 22)
-    ok:SetPoint("BOTTOM", 0, 14)
-    ok:SetText("Got it")
-    ok:SetScript("OnClick", function() f:Hide() end)
-    welcomeSet = w
-    f:SetScript("OnShow", function()
-        DB.welcomeShown = true -- set the moment it's shown: /reload or logout with the window open won't repeat it
-        RefreshUI()
-    end)
-    return f
-end
-
+---------------------------------------------------------------- 0.5.2: shown once at the first login (0.5.7: the window above)
 local welcomeChecked, welcomePending = false, false -- this session: login check done / waiting for combat to end
-
-local function ShowWelcome()
-    welcomeFrame = welcomeFrame or CreateWelcomeWindow()
-    welcomeFrame:Show()
-end
 
 local function MaybeShowWelcome() -- after the login delay, and on PLAYER_REGEN_ENABLED while pending
     if DB.welcomeShown then welcomePending = false return end
     if InCombatLockdown and InCombatLockdown() then welcomePending = true return end
     welcomePending = false
-    ShowWelcome()
+    ShowOptions()
 end
 
 -- Settings > AddOns > MusicPlus (canvas category). Optional; failures are ignored.
@@ -2158,7 +2272,8 @@ local function Status()
     end
     Print(("Zone: %s, Real: %s, Subzone: \"%s\""):format(GetZoneText() or "", GetRealZoneText() or "", GetSubZoneText() or ""))
     if z then
-        Print(("%s: %d original + %d custom songs in the rotation"):format(z.title, #z.origTracks, #z.customTracks))
+        Print(("%s: %d original + %d custom songs in the rotation%s"):format(z.title, #z.origTracks, #CustomPool(z),
+            (z.city and DB.pool == "all") and " (a city: always its own songs)" or (CustomPool(z) ~= z.customTracks and " (customs from all leveling zones)" or "")))
     end
     local spot, dist = SpotHere(z)
     if S.innSpot then spot, dist = S.innSpot, select(2, SpotNear(z, 1e9)) or 0 end
@@ -2182,6 +2297,8 @@ local function Status()
         type(MusicPlusDB) == "table" and "loaded" or "not loaded"))
     Print(("Loop music: %s  Song titles in chat: %s"):format(DB.loop and "on" or ("off (" .. GAP_MIN .. "-" .. GAP_MAX .. " s silence between songs)"),
         DB.titles and "on" or "off"))
+    Print("Leveling Zone Music: " .. POOL_LABELS[DB.pool] .. (DB.pool == "all" and
+        (" (" .. #ALL_LEVELING_CUSTOMS .. " custom songs in leveling zones; cities unchanged)") or "")) -- 0.5.7
     if S.interrupted then Print("Song is interrupted (alt-tab?); retrying every " .. RETRY .. " s.") end
     if CVarGet("Sound_EnableMusic") == "0" then
         Print("|cffffff00Warning:|r game Music is off; MusicPlus plays on the Music channel, so turn Music on.")
@@ -2244,13 +2361,14 @@ local function InnCommand(arg)
 end
 
 local function Help()
-    Print("/mplus - options window   /mplus status (or now) - show state   /mplus skip - next track")
+    Print("/mplus - options window (open/close)   /mplus status (or now) - show state   /mplus skip - next track")
     Print("/mplus on / off - enable/disable   /mplus replay - restart the current song")
     Print("/mplus test - play first custom MP3 anywhere   /mplus stop - stop test")
     Print("/mplus inn - save this spot as an inn (stand inside)   /mplus inn list / clear   /mplus where - position")
     Print("/mplus bgsound - toggle \"Sound in Background\"   /mplus mode - switch music/sound playback   /mplus debug")
     Print("/mplus loop [on/off] - Loop music (off = 3-5 min silence between songs)   /mplus titles [on/off] - song titles in chat")
-    Print("/mplus welcome - show the welcome window again")
+    Print("/mplus pool [zone/all] - Leveling Zone Music: this zone's custom songs only, or all leveling zones' (cities unchanged)")
+    Print("/mplus welcome - open the options window (the welcome screen) again")
 end
 
 -- "on" / "off" / "" (toggle) for /mplus loop and /mplus titles; nil = not understood
@@ -2309,7 +2427,18 @@ SlashCmdList["MUSICPLUS"] = function(msg)
     elseif cmd == "where" then
         Where()
     elseif cmd == "welcome" then
-        ShowWelcome()
+        ShowOptions() -- 0.5.7: the welcome window is the options window
+    elseif cmd == "pool" then -- 0.5.7: Leveling Zone Music
+        local v = (rest == "all") and "all" or ((rest == "zone" or rest == "this") and "zone" or nil)
+        if rest == "" then
+            Print("Leveling Zone Music: " .. POOL_LABELS[DB.pool] .. ". Usage: /mplus pool zone | all")
+            return
+        end
+        if not v then Print("Usage: /mplus pool zone | all") return end
+        SetPool(v)
+        Print("Leveling Zone Music is now: " .. POOL_LABELS[DB.pool] .. (DB.pool == "all" and
+            (" (leveling zones: their own original tracks, then custom songs from all " .. (#ZONE_ORDER - 6) ..
+            " leveling zones; cities unchanged).") or " (each zone plays only its own songs)."))
     else
         Help()
     end
@@ -2326,7 +2455,7 @@ f:RegisterEvent("PLAYER_LOGOUT")
 f:RegisterEvent("PLAYER_LEAVING_WORLD")
 f:RegisterEvent("SOUND_DEVICE_UPDATE")
 f:RegisterEvent("CVAR_UPDATE")
-f:RegisterEvent("PLAYER_REGEN_ENABLED") -- 0.5.2: welcome window waits for the end of combat
+f:RegisterEvent("PLAYER_REGEN_ENABLED") -- 0.5.2: the first-login window waits for the end of combat
 f:RegisterEvent("PLAYER_CONTROL_LOST")   -- 0.5.3: flight lock (taxi takeoff; the poll checks UnitOnTaxi too)
 f:RegisterEvent("PLAYER_CONTROL_GAINED") -- 0.5.3: landing
 f:SetScript("OnEvent", function(_, event, arg1, arg2)
@@ -2340,6 +2469,7 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
         if type(DB.innSpots) ~= "table" then DB.innSpots = {} end
         if type(DB.loop) ~= "boolean" then DB.loop = true end       -- 0.5.1: Loop music, default ON
         if type(DB.titles) ~= "boolean" then DB.titles = false end  -- 0.5.1: song titles in chat, default OFF
+        if DB.pool ~= "all" then DB.pool = "zone" end              -- 0.5.7: Leveling Zone Music, default this zone only
         if type(DB.fadeVolume) == "string" and tonumber(DB.fadeVolume) then
             CVarSet(VOL_CVAR, DB.fadeVolume) -- the client stopped mid-fade last time: put the volume back
             Print("Music volume restored to " .. math.floor(tonumber(DB.fadeVolume) * 100 + 0.5) .. "% (a fade-out was interrupted).")
@@ -2350,7 +2480,7 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
     elseif event == "CVAR_UPDATE" then
         -- remember changes made in Blizzard's Settings too (arg1 = CVar name, arg2 = value)
         if type(arg1) == "string" and arg1:lower() == BG_CVAR:lower() then DB.bgSound = (arg2 ~= "0") end
-        if (optionsFrame and optionsFrame:IsShown()) or (welcomeFrame and welcomeFrame:IsShown()) then RefreshUI() end
+        if optionsFrame and optionsFrame:IsShown() then RefreshUI() end
     elseif event == "SOUND_DEVICE_UPDATE" then
         ResumeHint("SOUND_DEVICE_UPDATE")
     elseif event == "PLAYER_LOGOUT" then
@@ -2389,4 +2519,4 @@ f:SetScript("OnUpdate", function()
     lastFrame = now
 end)
 
-Print("v0.5.6 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
+Print("v0.5.7 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
