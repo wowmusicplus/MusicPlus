@@ -1,4 +1,35 @@
---[[ MusicPlus 0.5.7 (24 zones: 6 capitals and 18 zones, Alliance and Horde, levels 1-45) for WoW: Forever 1.60.1 (Interface 16001)
+--[[ MusicPlus 0.5.10 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+0.5.10: updated two Ashenvale songs (same slots, chill versions): Whispers of the Old Gods -> Moonlit Whispers of
+Ashenvale, Starlight Over UnGoro -> Twilight Beyond UnGoro (lengths from ffprobe). Nothing else changed.
+0.5.9: "Disable MusicPlus for this zone" + window touch-ups (zones, songs, timing, inns, fades and flights unchanged).
+ * New checkbox right under Enable in the /mplus window: "Disable MusicPlus for this zone: <zone>". <zone> = the configured
+   zone you're in (FindZone, so a capital at its gates is the capital), refreshed on every zone event, loading screen and
+   whenever the window shows. Saved per zone title in MusicPlusDB.disabledZones[title] = true. Outside the configured
+   zones (and in instances) the box is greyed out and unchecked: "<zone text> (not a MusicPlus zone)".
+ * A disabled zone counts as "outside the configured zones" everywhere (Evaluate, the position poll, the walking-delay
+   readings): nothing starts there and the game's own music plays. Ticking it where MusicPlus plays fades the song out
+   at once (1.5 s, like /mplus off: no walking delay, no second reading), the game's music comes back; a silence
+   (Loop music off) just ends. Unticking starts a fresh rotation there (~0.1 s). Walking into a disabled zone = walking
+   out of the zones (the 0.5.3 6 s delay, going back cancels it); a loading screen or landing there = the ~1 s prompt
+   rule; walking out of one into a playing zone starts that zone at once (nothing was playing). Inns are unchanged (a
+   disabled zone is quiet anyway). Flights: the zone below is still ignored; if the zone the flight plays for (the
+   takeoff zone) is disabled mid-flight, or a /reload mid-flight would resume a disabled zone, MusicPlus fades out /
+   stays off for the rest of the flight. Leveling Zone Music "all": other leveling zones still mix all 114 custom songs
+   (a disabled zone's songs included: only the zone itself is affected); cities are unchanged.
+ * /mplus zone [on/off] (no argument: show this zone's state and the disabled zones), /mplus zone clear (re-enable
+   every zone); in /mplus help. /mplus status shows "This zone: <zone> - MusicPlus on/OFF here" and the disabled zones.
+ * Leveling Zone Music now has both descriptions under the dropdown ("For this zone only: ..." and "All zones: ..."),
+   the selected one brighter. The "Got it" button is now "Close". The window is taller (440 x 680) so nothing overlaps.
+0.5.8: new zone Zephras Isle, the Skyborne starting zone (levels 1-12; data only: one ZONES entry + its ZONE_ORDER key).
+ * ONE plain leveling zone (author's call): no capital, no subzone or area checks (Valanaar, the hub, is just part of it).
+   Detected like every zone: Forever uiMap 2521 (Map 2991, AreaTable 16593) or the zone text "Zephras Isle".
+ * Originals = every zone-music track the client has for the zone (Forever 1.60.1.70205): the zone default kit
+   (ZoneMusic 3230, the 2 Cataclysm Skywall tracks) and the subzone kits of Valanaar, Gustberry Lowlands, Shen'dar,
+   Thendal Village, Shrine of Akir and Shadowgale Forest (24 tracks, 32-159 s), played first, shuffled, as everywhere.
+   Not included: the Valanaar intro stinger (ZoneIntroMusic 1687) and the cave music (kit 204).
+ * 6 custom songs in "Zephras Isle\" (lengths measured with ffprobe). A leveling zone, so its customs join the
+   "Play music from all zones" pool: 19 leveling zones x 6 = 114 songs. No tavern music anywhere on the isle
+   (Windshaper Lodge and High Order Lodge use the area's music), so no inns. Nothing else changed.
 0.5.7: one window and a "Leveling Zone Music" setting (music timing, inns, fades, flights and zone detection unchanged).
  * The welcome window and the options window are now ONE window (MusicPlusOptionsFrame, title "MusicPlus 0.5.7"):
    "Welcome to MusicPlus" + the intro line, Enable, background sound, Loop music and Show song titles (each of the
@@ -48,7 +79,7 @@
  * "Loop music" (default ON = exactly the 0.5.0 behavior: the next track starts the moment one ends). OFF = like the
    game's own zone music with its Loop Music setting (CVar Sound_ZoneMusicNoDelay, never touched by MusicPlus) off:
    a track, then GAP_MIN-GAP_MAX s of silence, then the next track. The range is the ZoneMusic table's
-   SilenceIntervalMin/Max (180000/300000 ms, day and night) of every zone-music set our 24 zones use (Forever
+   SilenceIntervalMin/Max (180000/300000 ms, day and night) of every zone-music set our 25 zones use (Forever
    1.60.1.70094 and Classic Era 1.15.9, wago.tools), so it's one range for all zones. PlayMusic LOOPS, so a track
    never "just ends" (it would start over), and StopMusic() hands the Music channel back to the game (its zone music
    returns). So during the gap MusicPlus stays the PlayMusic owner with a silent placeholder, PlayMusic(SILENCE_FILE)
@@ -136,7 +167,8 @@ local BG_CVAR = "Sound_EnableSoundWhenGameIsInBG" -- Settings > Audio > "Sound i
 local VOL_CVAR = "Sound_MusicVolume"              -- Settings > Audio > "Music" volume
 -- 0.5.1 "Loop music" off: silence between tracks, in whole seconds. ZoneMusic SilenceIntervalMin/Max = 180000/300000 ms
 -- (day and night) for Zone-Stormwind, -Forest, -Plains, -Mountain, -EnchantedForest, -EvilForest, -DarkForest, -BarrenDry,
--- -Jungle, -Soggy, -Ironforge, -Darnassus, -Orgrimmar, -Thunderbluff, -Undercity (wago.tools ZoneMusic, build 1.60.1.70094).
+-- -Jungle, -Soggy, -Ironforge, -Darnassus, -Orgrimmar, -Thunderbluff, -Undercity (wago.tools ZoneMusic, build 1.60.1.70094);
+-- 0.5.8: the same for Zephras Isle's sets 3230, 3535, 3536, 3537, 3553, 3554, 3555 (build 1.60.1.70205).
 local GAP_MIN, GAP_MAX = 180, 300
 local SILENCE_FILE = ADDON_DIR .. "Silence.mp3" -- silent placeholder for PlayMusic during a gap (need not exist)
 local WELCOME_DELAY = 2 -- 0.5.2: s after the first PLAYER_ENTERING_WORLD before the one-time welcome window
@@ -873,8 +905,8 @@ local ZONES = {
         customs = {
             { file = "Ashenvale\\Secrets of Uldaman.mp3",         len = 172.92, name = "Secrets of Uldaman" },
             { file = "Ashenvale\\Discs of Norgannon.mp3",         len = 159.12, name = "Discs of Norgannon" },
-            { file = "Ashenvale\\Whispers of the Old Gods.mp3",   len = 121.39, name = "Whispers of the Old Gods" },
-            { file = "Ashenvale\\Starlight Over UnGoro.mp3",      len = 186.60, name = "Starlight Over UnGoro" },
+            { file = "Ashenvale\\Moonlit Whispers of Ashenvale.mp3", len = 180.00, name = "Moonlit Whispers of Ashenvale" }, -- 0.5.10
+            { file = "Ashenvale\\Twilight Beyond UnGoro.mp3",     len = 179.83, name = "Twilight Beyond UnGoro" },       -- 0.5.10
             { file = "Ashenvale\\Brann Bronzebeards Journal.mp3", len = 174.79, name = "Brann Bronzebeards Journal" },
             { file = "Ashenvale\\Maraudons Hidden Depths.mp3",    len = 169.63, name = "Maraudons Hidden Depths" },
         },
@@ -1002,6 +1034,62 @@ local ZONES = {
         -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
         zoneMusic = { 8181259, 8181261, 8181263, 8181265, 8181267, 8181269, 53541, 53542, 53543, 53544, 53545, 53546 },
     },
+    ["zephras-isle"] = {
+        title = "Zephras Isle",
+        -- 0.5.8: the Skyborne starting zone (levels 1-12), its own continent map (Map 2991, AreaTable 16593).
+        -- 2521 = Zephras Isle (Forever 1.60.1 UiMap, parent 947 Azeroth); 2665 = a second UiMap of the same map
+        -- (same bounds, UiMapAssignment). One plain zone: no capital, no subzone checks (Valanaar is part of it).
+        mapIDs = { 2521, 2665 },
+        names = { "Zephras Isle" },
+        -- Every zone-music track of the zone (Forever 1.60.1.70205 AreaTable/ZoneMusic/SoundKitEntry), day = night:
+        -- ZoneMusic 3230 "Zone-Zephras" (the zone default, kit 317169 = the Cataclysm Skywall tracks) and the subzone
+        -- sets 3535 Valanaar (kit 352866), 3553 Gustberry Lowlands (359863), 3554 Shen'dar (359864), 3555 Thendal
+        -- Village (359865), 3537 Shrine of Akir (352868), 3536 Shadowgale Forest (352867). Not included: the Valanaar
+        -- intro stinger (ZoneIntroMusic 1687, kit 361267 = 8175602) and Thendal Cave's cave music (ZoneMusic 204).
+        -- Lengths measured with ffprobe.
+        originals = {
+            { id = 441744, len = 159.29, name = "Skywall 1" },
+            { id = 441753, len = 109.90, name = "Skywall 2" },
+            { id = 8175596, len = 54.26, name = "Valanaar 1" },
+            { id = 8175598, len = 52.64, name = "Valanaar 2" },
+            { id = 8175600, len = 32.26, name = "Valanaar 3" },
+            { id = 8158738, len = 73.90, name = "Gustberry Lowlands 1" },
+            { id = 8158740, len = 76.64, name = "Gustberry Lowlands 2" },
+            { id = 8246678, len = 57.78, name = "Gustberry Lowlands 3" },
+            { id = 8246680, len = 71.92, name = "Gustberry Lowlands 4" },
+            { id = 8158746, len = 72.78, name = "Shendar 1" },
+            { id = 8158748, len = 68.49, name = "Shendar 2" },
+            { id = 8246684, len = 68.55, name = "Shendar 3" },
+            { id = 8246686, len = 53.79, name = "Shendar 4" },
+            { id = 8158754, len = 72.05, name = "Thendal Village 1" },
+            { id = 8158756, len = 76.96, name = "Thendal Village 2" },
+            { id = 8246692, len = 47.44, name = "Thendal Village 3" },
+            { id = 8246694, len = 76.96, name = "Thendal Village 4" },
+            { id = 8158750, len = 64.03, name = "Shrine of Akir 1" },
+            { id = 8158752, len = 64.03, name = "Shrine of Akir 2" },
+            { id = 8246688, len = 53.16, name = "Shrine of Akir 3" },
+            { id = 8246690, len = 64.16, name = "Shrine of Akir 4" },
+            { id = 8158742, len = 67.94, name = "Shadowgale Forest 1" },
+            { id = 8158744, len = 67.03, name = "Shadowgale Forest 2" },
+            { id = 8246682, len = 73.93, name = "Shadowgale Forest 3" },
+        },
+        -- Suno songs; lengths from ffprobe
+        customs = {
+            { file = "Zephras Isle\\Winds Over Valanaar.mp3",         len = 180.00, name = "Winds Over Valanaar" },
+            { file = "Zephras Isle\\Gustberry Lowlands.mp3",          len = 180.00, name = "Gustberry Lowlands" },
+            { file = "Zephras Isle\\Stillness of Windsong Lake.mp3",  len = 179.64, name = "Stillness of Windsong Lake" },
+            { file = "Zephras Isle\\Shendar Highlands.mp3",           len = 179.59, name = "Shendar Highlands" },
+            { file = "Zephras Isle\\Shrine of the Storm Spirits.mp3", len = 179.59, name = "Shrine of the Storm Spirits" },
+            { file = "Zephras Isle\\Shadowgale Forest.mp3",           len = 180.02, name = "Shadowgale Forest" },
+        },
+        -- No tavern music anywhere on the isle: the Windshaper Lodge (Valanaar) and High Order Lodge rows of WMO 893 set
+        -- no music of their own (they inherit the area's), so the rotation keeps playing inside. No inns, no inn spots.
+        inns = {},
+        -- The same 24 files (each plays only in its own subzone in the game); muted in "sound" mode.
+        zoneMusic = { 441744, 441753, 8175596, 8175598, 8175600, 8158738, 8158740, 8246678, 8246680,
+                      8158746, 8158748, 8246684, 8246686, 8158754, 8158756, 8246692, 8246694,
+                      8158750, 8158752, 8246688, 8246690, 8158742, 8158744, 8246682 },
+    },
 }
 -- Tie-break order when two zones match at the same map level (they don't share IDs/names today).
 -- Detection itself is child-first (see ZoneForMap), so a city always beats the zone around it.
@@ -1011,6 +1099,7 @@ local ZONE_ORDER = {
     "westfall", "loch-modan", "darkshore", "silverpine-forest", "barrens",                      -- 10-25
     "redridge-mountains", "stonetalon-mountains", "duskwood", "ashenvale",                     -- 15-30
     "wetlands", "hillsbrad-foothills", "stranglethorn-vale",                                     -- 20-45
+    "zephras-isle",                                                                              -- 1-12, Skyborne (0.5.8)
 }
 
 -- Normalize the data once: track objects { name, file, duration, original }, sets for lookups.
@@ -1107,6 +1196,12 @@ local function CustomPool(z)
     return z.customTracks
 end
 local function Debug(msg) if S.debug then Print("|cff999999[debug]|r " .. tostring(msg)) end end
+
+-- 0.5.9: "Disable MusicPlus for this zone" (MusicPlusDB.disabledZones[zone title] = true). A disabled zone is treated
+-- as outside the configured zones (see Evaluate / ReadZone / WantedZone).
+local function ZoneDisabled(z)
+    return z ~= nil and type(DB.disabledZones) == "table" and DB.disabledZones[z.title] == true
+end
 
 local function CVarGet(name)
     local ok, v
@@ -1760,6 +1855,7 @@ end
 local function ReadZone()
     local z = FindZone()
     if z and InInn(z) then return nil end
+    if ZoneDisabled(z) then return nil end -- 0.5.9
     return z
 end
 
@@ -1767,8 +1863,16 @@ local function Evaluate()
     S.evalTimer = nil
     local restart = S.needRestart
     S.needRestart = false
+    local force = S.forceStop -- 0.5.9: the zone being played was just disabled: stop now (no delay, no second reading)
+    S.forceStop = false
     if S.testing then return end
     if UpdateTaxi() == "locked" and DB.enabled then -- 0.5.3 flight lock: no zone reading at all
+        if S.taxiZone and ZoneDisabled(S.taxiZone) then -- 0.5.9: the zone this flight plays for was disabled
+            Debug("flight lock: " .. S.taxiZone.title .. " is disabled, MusicPlus stays off for this flight")
+            S.taxiZone, DB.taxiZone = nil, false
+            if S.active and not S.fade then FadeStopRotation(FADE_LEAVE) end
+            return
+        end
         if not S.active then
             if S.taxiZone and not S.fade then StartRotation(S.taxiZone) end -- /reload mid-flight, /mplus on in flight
         elseif restart then
@@ -1784,6 +1888,9 @@ local function Evaluate()
     end
     local inn = false
     if z and InInn(z) then z, inn = nil, true end
+    local off = false
+    if ZoneDisabled(z) then z, off = nil, true end -- 0.5.9: disabled for this zone = outside the zones
+    local stopNow = off and force -- 0.5.9: ticked here: fade out at once, like /mplus off
     local delay = SwitchDelay()
     if z then
         if S.pendingStop and S.stopLong then Debug("pending stop cancelled (" .. (z == S.zone and "back" or "now") .. " in " .. z.title .. ")") end
@@ -1812,11 +1919,11 @@ local function Evaluate()
             if restart then RestartCurrent("loading screen") end
         end
     elseif S.active then
-        if S.pendingSwitch then Debug("pending zone switch to " .. S.pendingSwitch.title .. " cancelled (" .. (inn and "inn" or "outside the zones") .. ")") end
+        if S.pendingSwitch then Debug("pending zone switch to " .. S.pendingSwitch.title .. " cancelled (" .. (inn and "inn" or (off and "zone disabled" or "outside the zones")) .. ")") end
         S.pendingSwitch = nil
         if S.fade then return end -- already fading out
-        if inn or not DB.enabled then delay = nil end -- inns (and /mplus off) keep their 0.5.2 timing
-        if not DB.enabled or (S.pendingStop and (not S.stopLong or not delay or GetTime() - S.stopAt >= delay - 0.001)) then
+        if inn or not DB.enabled or stopNow then delay = nil end -- inns (and /mplus off, 0.5.9 zone ticked off) keep their 0.5.2 timing
+        if not DB.enabled or stopNow or (S.pendingStop and (not S.stopLong or not delay or GetTime() - S.stopAt >= delay - 0.001)) then
             S.pendingStop = false
             FadeStopRotation((DB.enabled and S.zone and InInn(S.zone)) and FADE_INN or FADE_LEAVE)
         elseif S.pendingStop then -- 0.5.3: walking out of the zones, the delay isn't over yet
@@ -1842,6 +1949,7 @@ local function WantedZone()
     local z = FindZone()
     local changed = UpdateInnLatch(z)
     if z and InInn(z) then return nil, changed end
+    if ZoneDisabled(z) then return nil, changed end -- 0.5.9: a disabled zone = outside the zones
     return z, changed
 end
 
@@ -1928,6 +2036,26 @@ local function SetEnabled(on)
     RefreshUI()
 end
 
+-- 0.5.9: Disable MusicPlus for zone z (on = disabled) or enable it again.
+local function SetZoneDisabled(z, on)
+    if not z then return end
+    if type(DB.disabledZones) ~= "table" then DB.disabledZones = {} end
+    DB.disabledZones[z.title] = on and true or nil
+    Debug(z.title .. (on and ": MusicPlus disabled for this zone" or ": MusicPlus enabled again for this zone"))
+    if on then
+        S.forceStop = true
+        ScheduleEvaluate(0)
+    else
+        S.forceStop = false
+        if S.fade and not S.fade.finishing and S.zone == z then -- unticked again mid-fade: keep playing
+            CancelFade("zone enabled again")
+            if S.taxi then S.taxiZone, DB.taxiZone = z, z.key end
+        end
+        ScheduleEvaluate(0.1)
+    end
+    RefreshUI()
+end
+
 -- 0.5.1: Loop music (MusicPlus's own setting; the game's Sound_ZoneMusicNoDelay is never changed)
 local function SetLoop(on)
     DB.loop = on and true or false
@@ -1973,7 +2101,7 @@ end
 -- family). The window is in UISpecialFrames so Escape closes it.
 -- 0.5.7: the 0.5.2 welcome window and the options window are one window, MusicPlusOptionsFrame.
 local controlSets, optionsFrame = {}, nil
-local WIN_W, WIN_H = 440, 610 -- 0.5.7: the merged window (everything fits with room to spare, see the layout below)
+local WIN_W, WIN_H = 440, 680 -- 0.5.9: the merged window, taller for the zone checkbox and the 2nd pool description
 
 -- Background sound checkbox (window and Settings panel): set the CVar, then show it everywhere (0.5.2: RefreshUI added)
 local function OnBgClick(self)
@@ -2030,7 +2158,8 @@ local function BuildPoolDropDown(parent, name)
 end
 
 -- opts (0.5.7, the window only): anchor = region to start under, descs = { bg, loop, titles } descriptions,
--- pool = add the Leveling Zone Music dropdown, bigLabels = checkbox labels in GameFontNormal (welcome style).
+-- pool = add the Leveling Zone Music dropdown, bigLabels = checkbox labels in GameFontNormal (welcome style),
+-- zone = add the 0.5.9 "Disable MusicPlus for this zone" checkbox under Enable.
 -- Without opts (the Settings panel) the layout is exactly 0.5.6's.
 local function BuildControls(parent, prefix, x, y, opts)
     opts = opts or {}
@@ -2052,6 +2181,21 @@ local function BuildControls(parent, prefix, x, y, opts)
     c.enable.Text:SetText("Enable MusicPlus (" .. #ZONE_ORDER .. " zones)")
     c.enable:SetScript("OnClick", function(self) SetEnabled(self:GetChecked()) end)
     after(c.enable, nil)
+
+    if opts.zone then -- 0.5.9: Disable MusicPlus for this zone (label = the zone you're in, see RefreshZoneBoxes)
+        c.zone = CreateFrame("CheckButton", prefix .. "Zone", parent, "UICheckButtonTemplate")
+        place(c.zone)
+        c.zone.Text:SetWidth(WIN_W - 70) -- a long zone name wraps to a 2nd line instead of running out of the window
+        c.zone.Text:SetJustifyH("LEFT")
+        c.zone:SetScript("OnClick", function(self)
+            local z = self.zoneObj
+            if z then SetZoneDisabled(z, self:GetChecked()) else self:SetChecked(false) end
+        end)
+        Tooltip(c.zone, "Disable MusicPlus for this zone", "Ticked: MusicPlus stays quiet in this zone (it fades out " ..
+            "if playing) and the game's own music plays here, as if MusicPlus were off, but only in this zone. Other " ..
+            "zones aren't affected. Saved per zone. Only for zones MusicPlus plays in. Also /mplus zone off / on.")
+        after(c.zone, nil)
+    end
 
     c.bg = CreateFrame("CheckButton", prefix .. "BgSound", parent, "UICheckButtonTemplate")
     place(c.bg)
@@ -2085,7 +2229,10 @@ local function BuildControls(parent, prefix, x, y, opts)
         local dx
         c.pool, dx = BuildPoolDropDown(parent, prefix .. "Pool")
         c.pool:SetPoint("TOPLEFT", c.poolLabel, "BOTTOMLEFT", dx, -4)
-        c.poolDesc = AddDesc(parent, c.poolLabel, 0, -40, "All zones: a leveling zone plays its own original tracks, then " ..
+        -- 0.5.9: both descriptions, the selected one brighter (RefreshUI)
+        c.poolDescZone = AddDesc(parent, c.poolLabel, 0, -40, "For this zone only: plays this zone's original music, then " ..
+            "its own custom songs.")
+        c.poolDesc = AddDesc(parent, c.poolDescZone, 0, -4, "All zones: a leveling zone plays its own original tracks, then " ..
             "custom songs from all " .. (#ZONE_ORDER - 6) .. " leveling zones. Cities always keep their own music.")
         last, lastIsDesc, lastCol = c.poolDesc, true, 4
     end
@@ -2122,14 +2269,46 @@ local function BuildControls(parent, prefix, x, y, opts)
     return c
 end
 
+-- 0.5.9: the "Disable MusicPlus for this zone" checkboxes follow the zone you're in
+local function CurrentZone()
+    local ok, z = pcall(FindZone)
+    return ok and z or nil
+end
+
+local function RefreshZoneBoxes()
+    local z
+    for _, c in ipairs(controlSets) do
+        if c.zone then
+            z = z or CurrentZone() or false
+            c.zone.zoneObj = z or false -- false, not nil: a nil field would fall through to frame lookups
+            if z then
+                c.zone.Text:SetText("Disable MusicPlus for this zone: " .. z.title)
+                c.zone.Text:SetTextColor(1, 0.82, 0)
+                c.zone:SetEnabled(true)
+                c.zone:SetChecked(ZoneDisabled(z))
+            else
+                local name = GetZoneText and GetZoneText() or ""
+                if name == "" then name = "unknown" end
+                c.zone.Text:SetText("Disable MusicPlus for this zone: " .. name .. " (not a MusicPlus zone)")
+                c.zone.Text:SetTextColor(0.5, 0.5, 0.5)
+                c.zone:SetChecked(false)
+                c.zone:SetEnabled(false)
+            end
+        end
+    end
+end
+
 function RefreshNowLabel()
+    local here -- 0.5.9: "disabled for this zone" instead of "Not playing (...)" there
     for _, c in ipairs(controlSets) do
         if S.track then
             c.now:SetText(("Now: %s (%s)"):format(S.track.name, PosLabel(S.pos)))
         elseif S.gap then
             c.now:SetText(GapText())
         else
-            c.now:SetText(S.active and "Now: -" or "Not playing (only in configured zones, not in inns)")
+            if here == nil then here = (not S.active and ZoneDisabled(CurrentZone())) or false end
+            c.now:SetText(S.active and "Now: -" or (here and "Not playing (disabled for this zone)"
+                or "Not playing (only in configured zones, not in inns)"))
         end
     end
 end
@@ -2141,11 +2320,17 @@ function RefreshUI()
         c.loop:SetChecked(DB.loop)
         c.titles:SetChecked(DB.titles)
         if c.pool then c.pool:SetChoice(DB.pool) end -- 0.5.7
+        if c.poolDescZone then -- 0.5.9: the selected choice's description brighter
+            local a, b = (DB.pool == "all") and 0.55 or 0.95, (DB.pool == "all") and 0.95 or 0.55
+            c.poolDescZone:SetTextColor(a, a, a)
+            c.poolDesc:SetTextColor(b, b, b)
+        end
         c.vol.refreshing = true
         c.vol:SetValue(GetVolumePercent())
         c.vol.refreshing = false
         c.skip:SetEnabled(S.active)
     end
+    RefreshZoneBoxes() -- 0.5.9
     RefreshNowLabel()
 end
 
@@ -2167,11 +2352,12 @@ local function MakeWindow(name, width, height, title)
 end
 
 -- 0.5.7: THE window (options menu + the 0.5.2 welcome). Layout, top to bottom (WIN_W x WIN_H):
---   "Welcome to MusicPlus" heading, intro line | Enable | Background sound + description | Loop music + description |
---   Show song titles + description | "Leveling Zone Music" label, dropdown, description | Music volume slider |
---   Skip + song playing now | "/mplus at any time" note | Got it (bottom center). X / Escape / Got it close it.
+--   "Welcome to MusicPlus" heading, intro line | Enable | Disable MusicPlus for this zone (0.5.9) |
+--   Background sound + description | Loop music + description | Show song titles + description |
+--   "Leveling Zone Music" label, dropdown, both descriptions (0.5.9) | Music volume slider |
+--   Skip + song playing now | "/mplus at any time" note | Close (bottom center; "Got it" before 0.5.9). X / Escape / Close close it.
 local function CreateOptionsWindow()
-    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.7")
+    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.10")
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, relPoint, px, py = self:GetPoint()
@@ -2189,7 +2375,7 @@ local function CreateOptionsWindow()
     f.intro:SetText("MusicPlus plays each zone's original Classic music plus custom songs in a shuffled rotation, " ..
         "and leaves inn music untouched wherever the game has it.")
     local c = BuildControls(f, "MusicPlusOpt", -4, -6, {
-        anchor = f.intro, pool = true, bigLabels = true,
+        anchor = f.intro, pool = true, bigLabels = true, zone = true,
         descs = {
             bg = "On (default): the music keeps playing when the game window isn't focused. " ..
                 "It sets the game's \"Sound in Background\" option.",
@@ -2208,7 +2394,7 @@ local function CreateOptionsWindow()
     local ok = CreateFrame("Button", "MusicPlusOptOK", f, "UIPanelButtonTemplate")
     ok:SetSize(100, 22)
     ok:SetPoint("BOTTOM", 0, 14)
-    ok:SetText("Got it")
+    ok:SetText("Close") -- 0.5.9: was "Got it"
     ok:SetScript("OnClick", function() f:Hide() end)
     f:SetScript("OnShow", function()
         DB.welcomeShown = true -- 0.5.2: set the moment it's shown: /reload or logout with the window open won't repeat it
@@ -2274,6 +2460,13 @@ local function Status()
     if z then
         Print(("%s: %d original + %d custom songs in the rotation%s"):format(z.title, #z.origTracks, #CustomPool(z),
             (z.city and DB.pool == "all") and " (a city: always its own songs)" or (CustomPool(z) ~= z.customTracks and " (customs from all leveling zones)" or "")))
+        Print("This zone: " .. z.title .. " - MusicPlus " .. (ZoneDisabled(z) and "|cffff4040OFF here|r (disabled for this zone; /mplus zone on)"
+            or "on here")) -- 0.5.9
+    end
+    do -- 0.5.9
+        local list = {}
+        for _, key in ipairs(ZONE_ORDER) do if ZoneDisabled(ZONES[key]) then list[#list + 1] = ZONES[key].title end end
+        if #list > 0 then Print(("Disabled zones (%d): %s"):format(#list, table.concat(list, ", "))) end
     end
     local spot, dist = SpotHere(z)
     if S.innSpot then spot, dist = S.innSpot, select(2, SpotNear(z, 1e9)) or 0 end
@@ -2368,6 +2561,7 @@ local function Help()
     Print("/mplus bgsound - toggle \"Sound in Background\"   /mplus mode - switch music/sound playback   /mplus debug")
     Print("/mplus loop [on/off] - Loop music (off = 3-5 min silence between songs)   /mplus titles [on/off] - song titles in chat")
     Print("/mplus pool [zone/all] - Leveling Zone Music: this zone's custom songs only, or all leveling zones' (cities unchanged)")
+    Print("/mplus zone [on/off] - MusicPlus on/off for the zone you're in (no argument = show)   /mplus zone clear - all zones on")
     Print("/mplus welcome - open the options window (the welcome screen) again")
 end
 
@@ -2439,6 +2633,29 @@ SlashCmdList["MUSICPLUS"] = function(msg)
         Print("Leveling Zone Music is now: " .. POOL_LABELS[DB.pool] .. (DB.pool == "all" and
             (" (leveling zones: their own original tracks, then custom songs from all " .. (#ZONE_ORDER - 6) ..
             " leveling zones; cities unchanged).") or " (each zone plays only its own songs)."))
+    elseif cmd == "zone" then -- 0.5.9: Disable MusicPlus for this zone
+        local z = CurrentZone()
+        if rest == "clear" then
+            if type(DB.disabledZones) ~= "table" then DB.disabledZones = {} end
+            local n = 0
+            for _ in pairs(DB.disabledZones) do n = n + 1 end
+            DB.disabledZones = {}
+            Print(("MusicPlus is on again in every zone (%d re-enabled)."):format(n))
+            ScheduleEvaluate(0.1); RefreshUI()
+            return
+        end
+        if not z then Print("You're not in a MusicPlus zone, so there's nothing to turn off here.") return end
+        if rest == "" then
+            Print(z.title .. ": MusicPlus is " .. (ZoneDisabled(z) and "OFF here (/mplus zone on)." or "on here (/mplus zone off to turn it off here)."))
+            local list = {}
+            for _, key in ipairs(ZONE_ORDER) do if ZoneDisabled(ZONES[key]) then list[#list + 1] = ZONES[key].title end end
+            Print(#list > 0 and ("Disabled zones: " .. table.concat(list, ", ")) or "No disabled zones.")
+            return
+        end
+        local on = OnOffArg(rest, not ZoneDisabled(z))
+        if on == nil then Print("Usage: /mplus zone [on/off/clear]") return end
+        SetZoneDisabled(z, not on)
+        Print(z.title .. ": MusicPlus is now " .. (on and "on here." or "OFF here; the game's own music plays in this zone."))
     else
         Help()
     end
@@ -2470,6 +2687,7 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
         if type(DB.loop) ~= "boolean" then DB.loop = true end       -- 0.5.1: Loop music, default ON
         if type(DB.titles) ~= "boolean" then DB.titles = false end  -- 0.5.1: song titles in chat, default OFF
         if DB.pool ~= "all" then DB.pool = "zone" end              -- 0.5.7: Leveling Zone Music, default this zone only
+        if type(DB.disabledZones) ~= "table" then DB.disabledZones = {} end -- 0.5.9: zone title -> true
         if type(DB.fadeVolume) == "string" and tonumber(DB.fadeVolume) then
             CVarSet(VOL_CVAR, DB.fadeVolume) -- the client stopped mid-fade last time: put the volume back
             Print("Music volume restored to " .. math.floor(tonumber(DB.fadeVolume) * 100 + 0.5) .. "% (a fade-out was interrupted).")
@@ -2495,6 +2713,7 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
         S.promptUntil = GetTime() + PROMPT_WINDOW -- 0.5.3: a teleport is a real move: prompt ~1 s confirmation
         S.needRestart = true -- music stops on loading screens: replay the current track if still in the zone
         ScheduleEvaluate(1.0)
+        RefreshZoneBoxes() -- 0.5.9
         if not welcomeChecked then -- 0.5.2: first loading screen of the session only (login or /reload)
             welcomeChecked = true
             if not DB.welcomeShown then C_Timer.After(WELCOME_DELAY, MaybeShowWelcome) end
@@ -2508,6 +2727,7 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
         local ok, want = true, nil
         if LongPending() then ok, want = pcall(ReadZone) end
         if ok and PendingBroken(want) then ScheduleEvaluate(0) else ScheduleEvaluate(DEBOUNCE) end
+        RefreshZoneBoxes() -- 0.5.9: the zone checkbox label follows the zone (ZONE_CHANGED*)
     end
 end)
 
@@ -2519,4 +2739,4 @@ f:SetScript("OnUpdate", function()
     lastFrame = now
 end)
 
-Print("v0.5.7 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
+Print("v0.5.10 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")

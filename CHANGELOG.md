@@ -2,6 +2,15 @@
 
 All notable changes to MusicPlus. Versions are for WoW Forever 1.60.1 (Interface 16001).
 
+## 0.5.10
+
+Changes since 0.5.7:
+
+- Added music for Zephras Isle, the Skyborne starting zone (25 zones in total).
+- New option to disable MusicPlus for the current zone only (`/mplus zone on` / `off`, `/mplus zone clear` turns every zone back on).
+- Updated music in Ashenvale.
+- Small options window tweaks: both Leveling Zone Music choices now have a description, and the "Got it" button is now "Close".
+
 ## 0.5.7
 
 - Combined the welcome and options windows into one window, opened with `/mplus`.

@@ -1,9 +1,9 @@
 # MusicPlus
 
-**Additional zone music for WoW Forever (Classic 1.60.1).** MusicPlus adds 144 new songs: 6 per zone across 24 zones, covering all 6 classic capitals plus 18 Alliance and Horde zones from level 1 to 45. Each new song is written around the mood of its zone. Each zone plays its original Classic tracks first, then its 6 new songs, shuffled and blended seamlessly. Inns with their own tavern music keep it, unchanged, and you can choose between continuous music or the original experience, with gaps of silence between songs.
+**Additional zone music for WoW Forever (Classic 1.60.1).** MusicPlus adds 150 new songs: 6 per zone across 25 zones, covering all 6 classic capitals, 18 Alliance and Horde zones from level 1 to 45, and Zephras Isle, the Skyborne starting zone. Each new song is written around the mood of its zone. Each zone plays its original Classic tracks first, then its 6 new songs, shuffled and blended seamlessly. Inns with their own tavern music keep it, unchanged, and you can choose between continuous music or the original experience, with gaps of silence between songs.
 
 - Client: WoW Forever (classic-style beta), version 1.60.1, TOC Interface `16001`
-- Current version: **0.5.7**
+- Current version: **0.5.10**
 
 > **Get the addon from the [Releases page](https://github.com/wowmusicplus/MusicPlus/releases/latest)**, not the green **Code** button. The Code download is only the source and has **no songs** in it.
 
@@ -24,23 +24,23 @@ A few details:
 - The songs play on the game's **Music** channel, so the game's own **Music volume** controls how loud they are. Ambience and all other sounds are left alone.
 - When MusicPlus stops (an inn, leaving the supported zones, `/mplus off`), the song **fades out smoothly** and the game's own music comes right back. Your Music volume is always put back exactly as it was.
 
-### The 24 zones
+### The 25 zones
 
-6 capital cities, 6 starting zones and 12 leveling zones, from level 1 to 45. The number after each zone is how many original Classic tracks it has. Every zone also has 6 new songs.
+6 capital cities, 7 starting zones and 12 leveling zones, from level 1 to 45. The number after each zone is how many original Classic tracks it has. Every zone also has 6 new songs.
 
 | Group | Zones |
 |---|---|
 | Capital cities | Stormwind (8), Ironforge (3), Darnassus (3), Orgrimmar (2), Thunder Bluff (3), Undercity (3) |
-| Starting zones (1–10) | Elwynn Forest (3), Dun Morogh (7), Teldrassil (5), Durotar (4), Mulgore (4), Tirisfal Glades (6) |
+| Starting zones (1–10) | Elwynn Forest (3), Dun Morogh (7), Teldrassil (5), Durotar (4), Mulgore (4), Tirisfal Glades (6), Zephras Isle (24, levels 1–12) |
 | Leveling zones (10–45) | Westfall (4), Loch Modan (3), Darkshore (4), Silverpine Forest (6), The Barrens (6), Redridge Mountains (3), Stonetalon Mountains (6), Duskwood (6), Ashenvale (5), Wetlands (5), Hillsbrad Foothills (3), Stranglethorn Vale (6) |
 
-Zones that share music in the game share the same originals. For example, Elwynn, Loch Modan, Redridge and Hillsbrad all use the Forest tracks.
+Zones that share music in the game share the same originals. For example, Elwynn, Loch Modan, Redridge and Hillsbrad all use the Forest tracks. Zephras Isle counts as one zone: all of the isle's music (Valanaar included) is played as its originals.
 
 ---
 
 ## Install
 
-1. Go to the **[Releases page](https://github.com/wowmusicplus/MusicPlus/releases/latest)** and download **`MusicPlus-v0.5.7.zip`** (under *Assets*).
+1. Go to the **[Releases page](https://github.com/wowmusicplus/MusicPlus/releases/latest)** and download **`MusicPlus-v0.5.10.zip`** (under *Assets*).
    Don't use the green **Code → Download ZIP** button: that one has no songs.
 2. Extract the zip into your WoW Forever AddOns folder so the path looks exactly like this:
    ```
@@ -48,7 +48,7 @@ Zones that share music in the game share the same originals. For example, Elwynn
    ```
    The zip already contains the `MusicPlus` folder, so extract it straight into `AddOns`. Make sure you don't end up with `MusicPlus\MusicPlus\...`.
 3. Start the game. At character select, click **AddOns** and make sure **MusicPlus** is enabled (tick *Load out of date AddOns* if it's listed as out of date).
-4. Log in. You should see `MusicPlus: v0.5.7 loaded (24 zones)` in chat, and the MusicPlus window pops up once to welcome you.
+4. Log in. You should see `MusicPlus: v0.5.10 loaded (25 zones)` in chat, and the MusicPlus window pops up once to welcome you.
 
 **Nothing to hear?** Check that the game's Music is turned on and its volume is up. `/mplus status` warns you if Music is off. `/mplus test` plays one of the custom songs anywhere, as a quick check.
 
@@ -56,15 +56,16 @@ Zones that share music in the game share the same originals. For example, Elwynn
 
 ## Options
 
-Type **`/mplus`** to open the MusicPlus window, which holds all the options. Drag it to move it; X, Escape or **Got it** closes it. The same options (except Leveling Zone Music) are also under **Game Menu → Options → AddOns → MusicPlus**.
+Type **`/mplus`** to open the MusicPlus window, which holds all the options. Drag it to move it; X, Escape or **Close** closes it. The same options (except Disable MusicPlus for this zone and Leveling Zone Music) are also under **Game Menu → Options → AddOns → MusicPlus**.
 
 | Option | Default | What it does |
 |---|---|---|
 | Enable MusicPlus | On | Turns the addon on or off. |
+| Disable MusicPlus for this zone: *zone* | Off | Shows the zone you're in. **Ticked:** MusicPlus stays quiet in that zone only and the game's own music plays there; other zones aren't affected. Saved per zone, so it stays off until you untick it there. Greyed out outside the MusicPlus zones. Same as `/mplus zone off` / `on`. |
 | Loop music | **On** | Songs play back to back. **Off:** after each song there's a random 3–5 minutes of silence before the next one, like the game's own music with its Loop Music option off. Nothing plays during the silence, including the game's zone music. |
 | Show song titles in chat | **Off** | **On:** prints `Now playing: <song> (Original 3/8)` in chat at every song change. The window and `/mplus status` always show the current song either way. |
 | Play music when game is in background | **On** | The game's "Sound in Background" setting, so alt-tabbing doesn't interrupt the music. If you turn it off, MusicPlus remembers that. |
-| Leveling Zone Music | **For this zone only** | **For this zone only:** each zone plays its own songs. **Play music from all zones:** in the 18 starting and leveling zones, the zone's own original tracks play first, then the custom songs from all 18 of those zones (108 songs), shuffled. Capital cities always play only their own songs. |
+| Leveling Zone Music | **For this zone only** | **For this zone only:** each zone plays its own songs. **Play music from all zones:** in the 19 starting and leveling zones, the zone's own original tracks play first, then the custom songs from all 19 of those zones (114 songs), shuffled. Capital cities always play only their own songs. |
 | Music volume slider | – | The same as the game's Music volume. |
 
 The window also has a **Skip** button and shows the song playing now (or a countdown during a silence).
@@ -88,6 +89,7 @@ Use `/mplus` or `/musicplus`.
 | `/mplus replay` | Restart the current song from the beginning |
 | `/mplus loop [on/off]` | Loop music on or off (no argument toggles it) |
 | `/mplus titles [on/off]` | Song titles in chat on or off (no argument toggles it) |
+| `/mplus zone [on/off]` | Turn MusicPlus off / on for the zone you're in only (no argument shows this zone's setting and the disabled zones); `/mplus zone clear` turns every zone back on |
 | `/mplus pool [zone/all]` | Leveling Zone Music: `zone` = this zone's songs only, `all` = songs from all leveling zones (no argument shows the current choice) |
 | `/mplus bgsound` | Toggle "Sound in Background" |
 | `/mplus welcome` | Open the MusicPlus window (same as `/mplus`) |
@@ -133,7 +135,7 @@ Good to know:
 
 ## Quick check (optional)
 
-1. `/reload`: chat says `MusicPlus: v0.5.7 loaded (24 zones)`.
+1. `/reload`: chat says `MusicPlus: v0.5.10 loaded (25 zones)`.
 2. `/mplus titles on`, then walk into Stormwind: `Now playing: ... (Original 1/8)`. Use `/mplus skip` to get to the custom songs (`Custom 1/6`).
 3. Walk into the Slaughtered Lamb bar or the Lion's Pride Inn: the song fades out and tavern music plays. Walk back out: a new rotation starts.
 4. Untick **Loop music** and let a song end: silence with a countdown in the window, then the next song 3–5 minutes later.
@@ -151,7 +153,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the version history.
 
 ## Music credits
 
-- **Custom songs:** the 144 custom songs (6 per zone) were created by the author with [Suno](https://suno.com) on a Pro plan, which includes commercial rights.
+- **Custom songs:** the 150 custom songs (6 per zone) were created by the author with [Suno](https://suno.com) on a Pro plan, which includes commercial rights.
 - **Original Warcraft music:** the original zone music is © Blizzard Entertainment. MusicPlus plays it from your own game client; none of it is included in this repository or the release zip.
 
 ## License
