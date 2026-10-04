@@ -1,4 +1,12 @@
---[[ MusicPlus 0.5.10 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+--[[ MusicPlus 0.5.12 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+0.5.12: song titles with proper punctuation. Every customs entry gets display = the approved title with its apostrophes
+("Vol'jin's Counsel"); file and name stay the apostrophe-free file name ("Voljins Counsel"), so no MP3 changes.
+Track objects take name = display (fallback: name, then the file name), so "Now playing", /mplus test, /mplus status,
+the window's "Now:" line and debug lines all show the display title. Nothing else changed.
+0.5.11: renamed all 150 custom songs with vanilla lore titles (data only: file and name of every customs entry; the MP3s
+were renamed to match). Same slots, same order, same lengths; titles and file names drop apostrophes as
+before (commas kept, they are fine in Windows file names). /mplus test now plays "Archbishop Benedictus Blessing"
+(Stormwind custom 1, the same MP3). Nothing else changed.
 0.5.10: updated two Ashenvale songs (same slots, chill versions): Whispers of the Old Gods -> Moonlit Whispers of
 Ashenvale, Starlight Over UnGoro -> Twilight Beyond UnGoro (lengths from ffprobe). Nothing else changed.
 0.5.9: "Disable MusicPlus for this zone" + window touch-ups (zones, songs, timing, inns, fades and flights unchanged).
@@ -188,7 +196,9 @@ local PROMPT_WINDOW = 5     -- s after PLAYER_ENTERING_WORLD / landing in which 
 --   within     key of a zone this one lies inside (optional). If the map resolves to that outer zone but
 --              the zone text names this one, this one wins (Stormwind City is never taken for Elwynn).
 --   originals  { id = FileDataID, len = seconds, name = ... }   played first, shuffled
---   customs    { file = path under Interface\AddOns\MusicPlus\, len = seconds, name = ... }   then these, shuffled
+--   customs    { file = path under Interface\AddOns\MusicPlus\, len = seconds, name = ..., display = ... }   then these, shuffled
+--              name = the file name without .mp3 (no apostrophes: Windows-safe); display = the title shown in game,
+--              with its punctuation (0.5.12). Shown: display, else name, else the file name.
 --              (an entry without a positive numeric len is ignored, so a typo can't break the timer)
 --   inns       subzone names (enUS) where the addon stays quiet so the game's inn music plays
 --   innSpots   { name, maps = { uiMapIDs }, x, y (0-1 map coords), r = radius in yards } - quiet there
@@ -215,12 +225,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Stormwind\\Cathedral of Light by Moonlight.mp3", len = 134.88, name = "Cathedral of Light by Moonlight" },
-            { file = "Stormwind\\Lions Pride at Dusk.mp3",             len = 144.84, name = "Lions Pride at Dusk" },
-            { file = "Stormwind\\Valley of Heroes at Rest.mp3",        len = 179.47, name = "Valley of Heroes at Rest" },
-            { file = "Stormwind\\Evening at the Keep.mp3",             len = 179.47, name = "Evening at the Keep" },
-            { file = "Stormwind\\Lantern Light on the Ramparts.mp3",   len = 178.82, name = "Lantern Light on the Ramparts" },
-            { file = "Stormwind\\Twilight Over the Harbor.mp3",        len = 180.00, name = "Twilight Over the Harbor" },
+            { file = "Stormwind\\Archbishop Benedictus Blessing.mp3", len = 134.88, name = "Archbishop Benedictus Blessing", display = "Archbishop Benedictus' Blessing" },
+            { file = "Stormwind\\The Boy Kings Lullaby.mp3",          len = 144.84, name = "The Boy Kings Lullaby", display = "The Boy King's Lullaby" },
+            { file = "Stormwind\\Lothar, Lion of Stormwind.mp3",      len = 179.47, name = "Lothar, Lion of Stormwind", display = "Lothar, Lion of Stormwind" },
+            { file = "Stormwind\\Lady Prestors Masquerade.mp3",       len = 179.47, name = "Lady Prestors Masquerade", display = "Lady Prestor's Masquerade" },
+            { file = "Stormwind\\Walls the Stonemasons Raised.mp3",   len = 178.82, name = "Walls the Stonemasons Raised", display = "Walls the Stonemasons Raised" },
+            { file = "Stormwind\\Bazil Thredds Stockade.mp3",         len = 180.00, name = "Bazil Thredds Stockade", display = "Bazil Thredd's Stockade" },
         },
         -- No inn subzones in Forever's Stormwind (inside the Gilded Rose it's just "Trade District").
         -- The Gilded Rose, Pig and Whistle Tavern and The Blue Recluse have no inn music in Forever (their WMO
@@ -257,12 +267,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Elwynn Forest\\Northshire Abbey Bells.mp3",             len = 194.42, name = "Northshire Abbey Bells" },
-            { file = "Elwynn Forest\\Road to Eastvale.mp3",                   len = 207.24, name = "Road to Eastvale" },
-            { file = "Elwynn Forest\\Goldshire Morning.mp3",                  len = 208.80, name = "Goldshire Morning" },
-            { file = "Elwynn Forest\\Crystal Lake Reverie.mp3",               len = 187.58, name = "Crystal Lake Reverie" },
-            { file = "Elwynn Forest\\Stars Over Brackwell Pumpkin Patch.mp3", len = 183.07, name = "Stars Over Brackwell Pumpkin Patch" },
-            { file = "Elwynn Forest\\Tower of Azora at Night.mp3",            len = 202.44, name = "Tower of Azora at Night" },
+            { file = "Elwynn Forest\\You No Take Candle.mp3",        len = 194.42, name = "You No Take Candle", display = "You No Take Candle" },
+            { file = "Elwynn Forest\\Hoggers Hunting Grounds.mp3",   len = 207.24, name = "Hoggers Hunting Grounds", display = "Hogger's Hunting Grounds" },
+            { file = "Elwynn Forest\\Innkeeper Farleys Morning.mp3", len = 208.80, name = "Innkeeper Farleys Morning", display = "Innkeeper Farley's Morning" },
+            { file = "Elwynn Forest\\Maybell and Tommy Joe.mp3",     len = 187.58, name = "Maybell and Tommy Joe", display = "Maybell and Tommy Joe" },
+            { file = "Elwynn Forest\\Princess Must Die.mp3",         len = 183.07, name = "Princess Must Die", display = "Princess Must Die" },
+            { file = "Elwynn Forest\\Theocritus Starlit Study.mp3",  len = 202.44, name = "Theocritus Starlit Study", display = "Theocritus' Starlit Study" },
         },
         inns = {
             "Lion's Pride Inn",         -- fallback only: Forever reports subzone "Goldshire" inside the inn
@@ -300,12 +310,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Westfall\\Ballad of Sentinel Hill.mp3",        len = 199.58, name = "Ballad of Sentinel Hill" },
-            { file = "Westfall\\Furlbrows Lost Harvest.mp3",         len = 194.78, name = "Furlbrows Lost Harvest" },
-            { file = "Westfall\\Harvest Sun Over Saldeans.mp3",      len = 198.72, name = "Harvest Sun Over Saldeans" },
-            { file = "Westfall\\The Dagger Hills in Daylight.mp3",   len = 183.14, name = "The Dagger Hills in Daylight" },
-            { file = "Westfall\\Moonbrooks Silent Streets.mp3",      len = 193.63, name = "Moonbrooks Silent Streets" },
-            { file = "Westfall\\Westfall Lighthouse Nocturne.mp3",   len = 198.43, name = "Westfall Lighthouse Nocturne" },
+            { file = "Westfall\\Gryan Stoutmantles Militia.mp3",      len = 199.58, name = "Gryan Stoutmantles Militia", display = "Gryan Stoutmantle's Militia" },
+            { file = "Westfall\\Poor Old Blanchy.mp3",                len = 194.78, name = "Poor Old Blanchy", display = "Poor Old Blanchy" },
+            { file = "Westfall\\Salma Saldeans Westfall Stew.mp3",    len = 198.72, name = "Salma Saldeans Westfall Stew", display = "Salma Saldean's Westfall Stew" },
+            { file = "Westfall\\Rusting Harvest Watchers.mp3",        len = 183.14, name = "Rusting Harvest Watchers", display = "Rusting Harvest Watchers" },
+            { file = "Westfall\\VanCleef Beneath Moonbrook.mp3",      len = 193.63, name = "VanCleef Beneath Moonbrook", display = "VanCleef Beneath Moonbrook" },
+            { file = "Westfall\\Captain Sanders Hidden Treasure.mp3", len = 198.43, name = "Captain Sanders Hidden Treasure", display = "Captain Sanders' Hidden Treasure" },
         },
         -- No inn or tavern in Classic Westfall (no WMO with inn/tavern music there in the 1.60.1 data;
         -- Sentinel Hill's inn came with Cataclysm). /mplus inn can still save a spot.
@@ -329,12 +339,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Ironforge\\Hall of Explorers.mp3",         len = 143.23, name = "Hall of Explorers" },
-            { file = "Ironforge\\Great Forge Anvilsong.mp3",     len = 122.42, name = "Great Forge Anvilsong" },
-            { file = "Ironforge\\Gates of Khaz Modan.mp3",       len = 139.92, name = "Gates of Khaz Modan" },
-            { file = "Ironforge\\Magnis Proud Hearth.mp3",       len = 138.67, name = "Magnis Proud Hearth" },
-            { file = "Ironforge\\Embers of the Great Forge.mp3", len = 178.15, name = "Embers of the Great Forge" },
-            { file = "Ironforge\\Mystic Ward After Dark.mp3",    len = 178.03, name = "Mystic Ward After Dark" },
+            { file = "Ironforge\\Sons of the Earthen.mp3",        len = 143.23, name = "Sons of the Earthen", display = "Sons of the Earthen" },
+            { file = "Ironforge\\Bengus Deepforges Anvil.mp3",    len = 122.42, name = "Bengus Deepforges Anvil", display = "Bengus Deepforge's Anvil" },
+            { file = "Ironforge\\War of the Three Hammers.mp3",   len = 139.92, name = "War of the Three Hammers", display = "War of the Three Hammers" },
+            { file = "Ironforge\\A Toast to Muradin.mp3",         len = 138.67, name = "A Toast to Muradin", display = "A Toast to Muradin" },
+            { file = "Ironforge\\Rumble of the Deeprun Tram.mp3", len = 178.15, name = "Rumble of the Deeprun Tram", display = "Rumble of the Deeprun Tram" },
+            { file = "Ironforge\\Mekkatorque in Exile.mp3",       len = 178.03, name = "Mekkatorque in Exile", display = "Mekkatorque in Exile" },
         },
         -- No inn subzone: the tavern WMO groups carry the district names ("Ironforge", "The Military Ward", "The Great Forge").
         inns = {},
@@ -370,12 +380,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Darnassus\\Temple of the Moon.mp3",          len = 193.20, name = "Temple of the Moon" },
-            { file = "Darnassus\\Tyrandes Sanctum.mp3",            len = 193.99, name = "Tyrandes Sanctum" },
-            { file = "Darnassus\\Moonwell Vigil.mp3",              len = 182.30, name = "Moonwell Vigil" },
-            { file = "Darnassus\\Cenarion Enclave Nocturne.mp3",   len = 209.11, name = "Cenarion Enclave Nocturne" },
-            { file = "Darnassus\\Warriors Terrace at Dawn.mp3",    len = 183.62, name = "Warriors Terrace at Dawn" },
-            { file = "Darnassus\\Craftsmens Terrace Sunlight.mp3", len = 169.63, name = "Craftsmens Terrace Sunlight" },
+            { file = "Darnassus\\Hymn of the Sisterhood.mp3",              len = 193.20, name = "Hymn of the Sisterhood", display = "Hymn of the Sisterhood" },
+            { file = "Darnassus\\Tyrande Awaits Malfurion.mp3",            len = 193.99, name = "Tyrande Awaits Malfurion", display = "Tyrande Awaits Malfurion" },
+            { file = "Darnassus\\Illidans Gift.mp3",                       len = 182.30, name = "Illidans Gift", display = "Illidan's Gift" },
+            { file = "Darnassus\\Heeding the Call.mp3",                    len = 209.11, name = "Heeding the Call", display = "Heeding the Call" },
+            { file = "Darnassus\\The Sentinels Long Vigil.mp3",            len = 183.62, name = "The Sentinels Long Vigil", display = "The Sentinels' Long Vigil" },
+            { file = "Darnassus\\Darnassian Bleu and Moonberry Juice.mp3", len = 169.63, name = "Darnassian Bleu and Moonberry Juice", display = "Darnassian Bleu and Moonberry Juice" },
         },
         -- No tavern music anywhere in Darnassus (WMO 1079 groups: city music 76; the inn on Craftsmen's Terrace too).
         inns = {},
@@ -398,12 +408,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Orgrimmar\\Drums of the Red Stone.mp3",  len = 178.80, name = "Drums of the Red Stone" },
-            { file = "Orgrimmar\\March of the Warchief.mp3",   len = 180.00, name = "March of the Warchief" },
-            { file = "Orgrimmar\\Ancestors at the Gate.mp3",   len = 179.74, name = "Ancestors at the Gate" },
-            { file = "Orgrimmar\\Horn Over the Gates.mp3",     len = 180.00, name = "Horn Over the Gates" },
-            { file = "Orgrimmar\\Echoes of the Red Stone.mp3", len = 179.88, name = "Echoes of the Red Stone" },
-            { file = "Orgrimmar\\Valley of Wisdom.mp3",        len = 180.02, name = "Valley of Wisdom" },
+            { file = "Orgrimmar\\Loktar Ogar.mp3",                len = 178.80, name = "Loktar Ogar", display = "Lok'tar Ogar" },
+            { file = "Orgrimmar\\War Drums of Grommash Hold.mp3", len = 180.00, name = "War Drums of Grommash Hold", display = "War Drums of Grommash Hold" },
+            { file = "Orgrimmar\\The Exodus of the Horde.mp3",    len = 179.74, name = "The Exodus of the Horde", display = "The Exodus of the Horde" },
+            { file = "Orgrimmar\\Orgrims Doomhammer.mp3",         len = 180.00, name = "Orgrims Doomhammer", display = "Orgrim's Doomhammer" },
+            { file = "Orgrimmar\\Fires of Ragefire Chasm.mp3",    len = 179.88, name = "Fires of Ragefire Chasm", display = "Fires of Ragefire Chasm" },
+            { file = "Orgrimmar\\Voljins Counsel.mp3",            len = 180.02, name = "Voljins Counsel", display = "Vol'jin's Counsel" },
         },
         -- No tavern music in Forever's Orgrimmar (new WMO 21142: no inn/tavern rows; Innkeeper Gryshka's inn uses the city music).
         inns = {},
@@ -426,12 +436,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Thunder Bluff\\Flute Above the Mesas.mp3",    len = 179.95, name = "Flute Above the Mesas" },
-            { file = "Thunder Bluff\\Morning on the High Rise.mp3", len = 179.95, name = "Morning on the High Rise" },
-            { file = "Thunder Bluff\\Dusk Over the Bluffs.mp3",     len = 179.71, name = "Dusk Over the Bluffs" },
-            { file = "Thunder Bluff\\Spirit Rise Winds.mp3",        len = 179.90, name = "Spirit Rise Winds" },
-            { file = "Thunder Bluff\\Heartbeat of the Plains.mp3",  len = 184.82, name = "Heartbeat of the Plains" },
-            { file = "Thunder Bluff\\Elder Rise Drums.mp3",         len = 180.02, name = "Elder Rise Drums" },
+            { file = "Thunder Bluff\\Cairne Bloodhoofs Peace.mp3",      len = 179.95, name = "Cairne Bloodhoofs Peace", display = "Cairne Bloodhoof's Peace" },
+            { file = "Thunder Bluff\\The Long Trek to Mulgore.mp3",     len = 179.95, name = "The Long Trek to Mulgore", display = "The Long Trek to Mulgore" },
+            { file = "Thunder Bluff\\Magatha Grimtotems Dusk.mp3",      len = 179.71, name = "Magatha Grimtotems Dusk", display = "Magatha Grimtotem's Dusk" },
+            { file = "Thunder Bluff\\Mists of the Pools of Vision.mp3", len = 179.90, name = "Mists of the Pools of Vision", display = "Mists of the Pools of Vision" },
+            { file = "Thunder Bluff\\Archdruid Hamuuls Teachings.mp3",  len = 184.82, name = "Archdruid Hamuuls Teachings", display = "Archdruid Hamuul's Teachings" },
+            { file = "Thunder Bluff\\The Centaur War Remembered.mp3",   len = 180.02, name = "The Centaur War Remembered", display = "The Centaur War Remembered" },
         },
         -- No tavern music in Thunder Bluff (WMOs 783/789; Innkeeper Pala's tent uses the city music).
         inns = {},
@@ -456,12 +466,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Undercity\\Organ of the Royal Crypts.mp3",       len = 188.59, name = "Organ of the Royal Crypts" },
-            { file = "Undercity\\Candles in the Catacombs.mp3",        len = 198.38, name = "Candles in the Catacombs" },
-            { file = "Undercity\\Minuet for the Forsaken.mp3",         len = 169.22, name = "Minuet for the Forsaken" },
-            { file = "Undercity\\Apothecarium Whispers.mp3",           len = 172.92, name = "Apothecarium Whispers" },
-            { file = "Undercity\\The Deathstalkers Waltz.mp3",         len = 190.03, name = "The Deathstalkers Waltz" },
-            { file = "Undercity\\Crypt Pulse.mp3",                     len = 169.92, name = "Crypt Pulse" },
+            { file = "Undercity\\Requiem for King Terenas.mp3",       len = 188.59, name = "Requiem for King Terenas", display = "Requiem for King Terenas" },
+            { file = "Undercity\\The Dark Ladys Candles.mp3",         len = 198.38, name = "The Dark Ladys Candles", display = "The Dark Lady's Candles" },
+            { file = "Undercity\\Minuet for Varimathras.mp3",         len = 169.22, name = "Minuet for Varimathras", display = "Minuet for Varimathras" },
+            { file = "Undercity\\Faranells New Plague.mp3",           len = 172.92, name = "Faranells New Plague", display = "Faranell's New Plague" },
+            { file = "Undercity\\Free Will of the Forsaken.mp3",      len = 190.03, name = "Free Will of the Forsaken", display = "Free Will of the Forsaken" },
+            { file = "Undercity\\Beneath the Ruins of Lordaeron.mp3", len = 169.92, name = "Beneath the Ruins of Lordaeron", display = "Beneath the Ruins of Lordaeron" },
         },
         -- No tavern music in the Undercity (WMO 20736: city music; Innkeeper Norman's inn too).
         inns = {},
@@ -487,12 +497,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Dun Morogh\\Snowfall Over Kharanos.mp3",    len = 181.22, name = "Snowfall Over Kharanos" },
-            { file = "Dun Morogh\\Iceflow Lake Stillness.mp3",    len = 180.00, name = "Iceflow Lake Stillness" },
-            { file = "Dun Morogh\\Distant Horn in the Peaks.mp3", len = 179.52, name = "Distant Horn in the Peaks" },
-            { file = "Dun Morogh\\Frost on the Old Road.mp3",     len = 180.00, name = "Frost on the Old Road" },
-            { file = "Dun Morogh\\Hearthside at Thunderbrew.mp3", len = 179.71, name = "Hearthside at Thunderbrew" },
-            { file = "Dun Morogh\\Coldridge Embers.mp3",          len = 180.02, name = "Coldridge Embers" },
+            { file = "Dun Morogh\\Thermapluggs Betrayal.mp3",         len = 181.22, name = "Thermapluggs Betrayal", display = "Thermaplugg's Betrayal" },
+            { file = "Dun Morogh\\Tundra MacGranns Stolen Stash.mp3", len = 180.00, name = "Tundra MacGranns Stolen Stash", display = "Tundra MacGrann's Stolen Stash" },
+            { file = "Dun Morogh\\The Perfect Stout.mp3",             len = 179.52, name = "The Perfect Stout", display = "The Perfect Stout" },
+            { file = "Dun Morogh\\Ammo for Rumbleshot.mp3",           len = 180.00, name = "Ammo for Rumbleshot", display = "Ammo for Rumbleshot" },
+            { file = "Dun Morogh\\Beer Basted Boar Ribs.mp3",         len = 179.71, name = "Beer Basted Boar Ribs", display = "Beer Basted Boar Ribs" },
+            { file = "Dun Morogh\\Grelin Whitebeards Camp.mp3",       len = 180.02, name = "Grelin Whitebeards Camp", display = "Grelin Whitebeard's Camp" },
         },
         -- Subzone fallback: the Thunderbrew Distillery row (WMO 1970 set 1) is named, so the subzone may read "Thunderbrew Distillery".
         inns = { "Thunderbrew Distillery" },
@@ -524,12 +534,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Teldrassil\\Shadowglen Awakening.mp3",        len = 219.24, name = "Shadowglen Awakening" },
-            { file = "Teldrassil\\The World Tree Reborn.mp3",       len = 204.84, name = "The World Tree Reborn" },
-            { file = "Teldrassil\\Starbreeze Village at Night.mp3", len = 199.39, name = "Starbreeze Village at Night" },
-            { file = "Teldrassil\\Moonlit Lake AlAmeth.mp3",        len = 219.67, name = "Moonlit Lake AlAmeth" },
-            { file = "Teldrassil\\Dolanaar Sunrise.mp3",            len = 199.99, name = "Dolanaar Sunrise" },
-            { file = "Teldrassil\\Ruttheran Village Morning.mp3",   len = 193.94, name = "Ruttheran Village Morning" },
+            { file = "Teldrassil\\The Balance of Nature.mp3",      len = 219.24, name = "The Balance of Nature", display = "The Balance of Nature" },
+            { file = "Teldrassil\\Crown of the Earth.mp3",         len = 204.84, name = "Crown of the Earth", display = "Crown of the Earth" },
+            { file = "Teldrassil\\The Sleeping Druid.mp3",         len = 199.39, name = "The Sleeping Druid", display = "The Sleeping Druid" },
+            { file = "Teldrassil\\Denalans Timberling Garden.mp3", len = 219.67, name = "Denalans Timberling Garden", display = "Denalan's Timberling Garden" },
+            { file = "Teldrassil\\Zenn Foulhoofs Bargain.mp3",     len = 199.99, name = "Zenn Foulhoofs Bargain", display = "Zenn Foulhoof's Bargain" },
+            { file = "Teldrassil\\Vesprystus Takes Flight.mp3",    len = 193.94, name = "Vesprystus Takes Flight", display = "Vesprystus Takes Flight" },
         },
         -- No tavern music in Teldrassil (Dolanaar inn, nightelfinn WMO 727: no tavern rows).
         inns = {},
@@ -553,12 +563,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Durotar\\Red Dust at Noon.mp3",         len = 179.83, name = "Red Dust at Noon" },
-            { file = "Durotar\\Valley of Trials Sunrise.mp3", len = 178.80, name = "Valley of Trials Sunrise" },
-            { file = "Durotar\\Echoes Over the Canyon.mp3",   len = 180.02, name = "Echoes Over the Canyon" },
-            { file = "Durotar\\Razor Hill Stillness.mp3",     len = 179.45, name = "Razor Hill Stillness" },
-            { file = "Durotar\\Senjin Tide at Dusk.mp3",      len = 179.95, name = "Senjin Tide at Dusk" },
-            { file = "Durotar\\Embers on the Southfury.mp3",  len = 179.42, name = "Embers on the Southfury" },
+            { file = "Durotar\\The Land Named for Durotan.mp3",  len = 179.83, name = "The Land Named for Durotan", display = "The Land Named for Durotan" },
+            { file = "Durotar\\Your Place in the World.mp3",     len = 178.80, name = "Your Place in the World", display = "Your Place in the World" },
+            { file = "Durotar\\Burning Blade at Skull Rock.mp3", len = 180.02, name = "Burning Blade at Skull Rock", display = "Burning Blade at Skull Rock" },
+            { file = "Durotar\\GarThok Stands Watch.mp3",        len = 179.45, name = "GarThok Stands Watch", display = "Gar'Thok Stands Watch" },
+            { file = "Durotar\\Zalazanes Echo Isles.mp3",        len = 179.95, name = "Zalazanes Echo Isles", display = "Zalazane's Echo Isles" },
+            { file = "Durotar\\Proudmoores Fallen Fleet.mp3",    len = 179.42, name = "Proudmoores Fallen Fleet", display = "Proudmoore's Fallen Fleet" },
         },
         -- Razor Hill inn (orcinn WMO 1849) has no tavern music. Sen'jin Village itself (area 367) plays Zone-TavernHorde outdoors
         -- too; that is a village, not a building, so only the hut is a spot (add "Sen'jin Village" to inns to go quiet in the whole village).
@@ -589,12 +599,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Mulgore\\Red Cloud Mesa.mp3",           len = 202.82, name = "Red Cloud Mesa" },
-            { file = "Mulgore\\Bloodhoof Village Hearth.mp3", len = 214.75, name = "Bloodhoof Village Hearth" },
-            { file = "Mulgore\\Sunrise Over Mulgore.mp3",     len = 206.42, name = "Sunrise Over Mulgore" },
-            { file = "Mulgore\\Kodo Herds of the Plains.mp3", len = 199.99, name = "Kodo Herds of the Plains" },
-            { file = "Mulgore\\Earth Mothers Night Sky.mp3",  len = 213.62, name = "Earth Mothers Night Sky" },
-            { file = "Mulgore\\Red Rocks Moonlight.mp3",      len = 202.99, name = "Red Rocks Moonlight" },
+            { file = "Mulgore\\The Hunt Begins.mp3",               len = 202.82, name = "The Hunt Begins", display = "The Hunt Begins" },
+            { file = "Mulgore\\Baine Bloodhoofs Hearth.mp3",       len = 214.75, name = "Baine Bloodhoofs Hearth", display = "Baine Bloodhoof's Hearth" },
+            { file = "Mulgore\\Water of the Seers.mp3",            len = 206.42, name = "Water of the Seers", display = "Water of the Seers" },
+            { file = "Mulgore\\Arracheas Horn.mp3",                len = 199.99, name = "Arracheas Horn", display = "Arra'chea's Horn" },
+            { file = "Mulgore\\Winterhoof Cleansing.mp3",          len = 213.62, name = "Winterhoof Cleansing", display = "Winterhoof Cleansing" },
+            { file = "Mulgore\\Ancestral Spirit of Red Rocks.mp3", len = 202.99, name = "Ancestral Spirit of Red Rocks", display = "Ancestral Spirit of Red Rocks" },
         },
         -- No tavern music in Mulgore (Bloodhoof Village longhouse, WMO 704: no tavern rows).
         inns = {},
@@ -619,12 +629,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Tirisfal Glades\\Deathknell Awakening.mp3",        len = 202.99, name = "Deathknell Awakening" },
-            { file = "Tirisfal Glades\\Brill Town Bells.mp3",            len = 178.20, name = "Brill Town Bells" },
-            { file = "Tirisfal Glades\\Scarlet Monastery Moonlight.mp3", len = 189.96, name = "Scarlet Monastery Moonlight" },
-            { file = "Tirisfal Glades\\Agamand Mills Fog.mp3",           len = 194.83, name = "Agamand Mills Fog" },
-            { file = "Tirisfal Glades\\Balnir Farmstead Lament.mp3",     len = 183.98, name = "Balnir Farmstead Lament" },
-            { file = "Tirisfal Glades\\Remembrance of Lordaeron.mp3",    len = 189.12, name = "Remembrance of Lordaeron" },
+            { file = "Tirisfal Glades\\Undertaker Mordos Welcome.mp3",  len = 202.99, name = "Undertaker Mordos Welcome", display = "Undertaker Mordo's Welcome" },
+            { file = "Tirisfal Glades\\Toll for Gallows End.mp3",       len = 178.20, name = "Toll for Gallows End", display = "Toll for Gallows' End" },
+            { file = "Tirisfal Glades\\Whitemanes Midnight Prayer.mp3", len = 189.96, name = "Whitemanes Midnight Prayer", display = "Whitemane's Midnight Prayer" },
+            { file = "Tirisfal Glades\\The Agamand Family Crypt.mp3",   len = 194.83, name = "The Agamand Family Crypt", display = "The Agamand Family Crypt" },
+            { file = "Tirisfal Glades\\Marlas Last Wish.mp3",           len = 183.98, name = "Marlas Last Wish", display = "Marla's Last Wish" },
+            { file = "Tirisfal Glades\\KelThuzads Plagued Grain.mp3",   len = 189.12, name = "KelThuzads Plagued Grain", display = "Kel'Thuzad's Plagued Grain" },
         },
         -- Gallows' End Tavern is a real subzone (AreaTable 2119) and a named WMO row: kept as the subzone fallback.
         inns = { "Gallows' End Tavern" },
@@ -653,12 +663,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Loch Modan\\Thelsamar Hearthfire.mp3",          len = 184.39, name = "Thelsamar Hearthfire" },
-            { file = "Loch Modan\\Stonewrought Dam at Dawn.mp3",      len = 203.42, name = "Stonewrought Dam at Dawn" },
-            { file = "Loch Modan\\Sunlight on the Loch.mp3",          len = 197.18, name = "Sunlight on the Loch" },
-            { file = "Loch Modan\\Algaz Station Road.mp3",            len = 202.82, name = "Algaz Station Road" },
-            { file = "Loch Modan\\Moonlight Over the Loch.mp3",       len = 202.82, name = "Moonlight Over the Loch" },
-            { file = "Loch Modan\\Ironbands Excavation Nocturne.mp3", len = 204.72, name = "Ironbands Excavation Nocturne" },
+            { file = "Loch Modan\\Thelsamar Blood Sausages.mp3",    len = 184.39, name = "Thelsamar Blood Sausages", display = "Thelsamar Blood Sausages" },
+            { file = "Loch Modan\\A Dark Threat Looms.mp3",         len = 203.42, name = "A Dark Threat Looms", display = "A Dark Threat Looms" },
+            { file = "Loch Modan\\Bingles Missing Supplies.mp3",    len = 197.18, name = "Bingles Missing Supplies", display = "Bingles' Missing Supplies" },
+            { file = "Loch Modan\\Through the Valley of Kings.mp3", len = 202.82, name = "Through the Valley of Kings", display = "Through the Valley of Kings" },
+            { file = "Loch Modan\\Tales of Farstrider Lodge.mp3",   len = 202.82, name = "Tales of Farstrider Lodge", display = "Tales of Farstrider Lodge" },
+            { file = "Loch Modan\\Excavation Progress Report.mp3",  len = 204.72, name = "Excavation Progress Report", display = "Excavation Progress Report" },
         },
         -- Subzone fallback: "Stoutlager Inn" (named row of WMO 1971 set 1).
         inns = { "Stoutlager Inn" },
@@ -689,12 +699,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Darkshore\\Auberdine Shores.mp3",            len = 217.99, name = "Auberdine Shores" },
-            { file = "Darkshore\\Ruins of Mathystra.mp3",          len = 204.48, name = "Ruins of Mathystra" },
-            { file = "Darkshore\\Tides of AmethAran.mp3",          len = 197.64, name = "Tides of AmethAran" },
-            { file = "Darkshore\\Twilight Over BashalAran.mp3",    len = 223.22, name = "Twilight Over BashalAran" },
-            { file = "Darkshore\\Grove of the Ancients.mp3",       len = 189.62, name = "Grove of the Ancients" },
-            { file = "Darkshore\\Lament of Cliffspring Falls.mp3", len = 183.96, name = "Lament of Cliffspring Falls" },
+            { file = "Darkshore\\The Absent Minded Prospector.mp3",  len = 217.99, name = "The Absent Minded Prospector", display = "The Absent Minded Prospector" },
+            { file = "Darkshore\\The Masters Glaive.mp3",            len = 204.48, name = "The Masters Glaive", display = "The Master's Glaive" },
+            { file = "Darkshore\\The Ghost of Anaya Dawnrunner.mp3", len = 197.64, name = "The Ghost of Anaya Dawnrunner", display = "The Ghost of Anaya Dawnrunner" },
+            { file = "Darkshore\\The Tower of Althalaxx.mp3",        len = 223.22, name = "The Tower of Althalaxx", display = "The Tower of Althalaxx" },
+            { file = "Darkshore\\Onu, Ancient of Lore.mp3",          len = 189.62, name = "Onu, Ancient of Lore", display = "Onu, Ancient of Lore" },
+            { file = "Darkshore\\Washed Ashore.mp3",                 len = 183.96, name = "Washed Ashore", display = "Washed Ashore" },
         },
         -- Auberdine inn (dsnightelfinn WMO 894) has no tavern music.
         inns = {},
@@ -725,12 +735,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Silverpine Forest\\Dalsons Tears.mp3",                 len = 168.19, name = "Dalsons Tears" },
-            { file = "Silverpine Forest\\Scarlet Graveyard Crypts.mp3",      len = 179.64, name = "Scarlet Graveyard Crypts" },
-            { file = "Silverpine Forest\\Deathknell Graves at Midnight.mp3", len = 173.59, name = "Deathknell Graves at Midnight" },
-            { file = "Silverpine Forest\\Lurker of Brightwood Grove.mp3",    len = 164.83, name = "Lurker of Brightwood Grove" },
-            { file = "Silverpine Forest\\MorLadims Grave.mp3",               len = 174.00, name = "MorLadims Grave" },
-            { file = "Silverpine Forest\\Sorrow Hill Barrows.mp3",           len = 174.43, name = "Sorrow Hill Barrows" },
+            { file = "Silverpine Forest\\Arugals Folly.mp3",            len = 168.19, name = "Arugals Folly", display = "Arugal's Folly" },
+            { file = "Silverpine Forest\\Baron Silverlaines Halls.mp3", len = 179.64, name = "Baron Silverlaines Halls", display = "Baron Silverlaine's Halls" },
+            { file = "Silverpine Forest\\Pyrewood After Moonrise.mp3",  len = 173.59, name = "Pyrewood After Moonrise", display = "Pyrewood After Moonrise" },
+            { file = "Silverpine Forest\\The Shadowfang Blade.mp3",     len = 164.83, name = "The Shadowfang Blade", display = "The Shadowfang Blade" },
+            { file = "Silverpine Forest\\Beyond the Greymane Wall.mp3", len = 174.00, name = "Beyond the Greymane Wall", display = "Beyond the Greymane Wall" },
+            { file = "Silverpine Forest\\Wizards of Ambermill.mp3",     len = 174.43, name = "Wizards of Ambermill", display = "Wizards of Ambermill" },
         },
         -- The Sepulcher inn (crypt WMO 712) has no tavern music. No subzone of its own for the Pyrewood inn.
         inns = {},
@@ -762,12 +772,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "The Barrens\\Crossroads Wanderer.mp3",           len = 223.20, name = "Crossroads Wanderer" },
-            { file = "The Barrens\\Long Road to Ratchet.mp3",          len = 194.83, name = "Long Road to Ratchet" },
-            { file = "The Barrens\\Heat Haze Over the Barrens.mp3",    len = 202.82, name = "Heat Haze Over the Barrens" },
-            { file = "The Barrens\\Lushwater Oasis Noon.mp3",          len = 194.90, name = "Lushwater Oasis Noon" },
-            { file = "The Barrens\\Night Falls on the Crossroads.mp3", len = 208.03, name = "Night Falls on the Crossroads" },
-            { file = "The Barrens\\Stars Over Camp Taurajo.mp3",       len = 203.23, name = "Stars Over Camp Taurajo" },
+            { file = "The Barrens\\Searching for Mankriks Wife.mp3", len = 223.20, name = "Searching for Mankriks Wife", display = "Searching for Mankrik's Wife" },
+            { file = "The Barrens\\Baron Longshores Bounty.mp3",     len = 194.83, name = "Baron Longshores Bounty", display = "Baron Longshore's Bounty" },
+            { file = "The Barrens\\Naralexs Nightmare.mp3",          len = 202.82, name = "Naralexs Nightmare", display = "Naralex's Nightmare" },
+            { file = "The Barrens\\The Forgotten Pools.mp3",         len = 194.90, name = "The Forgotten Pools", display = "The Forgotten Pools" },
+            { file = "The Barrens\\Echeyakees Night Prowl.mp3",      len = 208.03, name = "Echeyakees Night Prowl", display = "Echeyakee's Night Prowl" },
+            { file = "The Barrens\\Mangletooths Blood Shards.mp3",   len = 203.23, name = "Mangletooths Blood Shards", display = "Mangletooth's Blood Shards" },
         },
         -- No tavern music at the Crossroads (orcinn WMO 1849) or Camp Taurajo (longhouse WMO 704). Ratchet stays in the Barrens.
         inns = {},
@@ -796,12 +806,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Redridge Mountains\\Still Water at Lakeshire.mp3",    len = 194.52, name = "Still Water at Lakeshire" },
-            { file = "Redridge Mountains\\Canyon Afternoon.mp3",            len = 194.90, name = "Canyon Afternoon" },
-            { file = "Redridge Mountains\\Morning Over Lake Everstill.mp3", len = 202.03, name = "Morning Over Lake Everstill" },
-            { file = "Redridge Mountains\\Breeze by the Old Mill.mp3",      len = 212.04, name = "Breeze by the Old Mill" },
-            { file = "Redridge Mountains\\Redridge Dusk.mp3",               len = 212.47, name = "Redridge Dusk" },
-            { file = "Redridge Mountains\\Lantern Light on the Lake.mp3",   len = 199.58, name = "Lantern Light on the Lake" },
+            { file = "Redridge Mountains\\Magistrate Solomons Plea.mp3",   len = 194.52, name = "Magistrate Solomons Plea", display = "Magistrate Solomon's Plea" },
+            { file = "Redridge Mountains\\Keeshan, Missing in Action.mp3", len = 194.90, name = "Keeshan, Missing in Action", display = "Keeshan, Missing in Action" },
+            { file = "Redridge Mountains\\Redridge Goulash.mp3",           len = 202.03, name = "Redridge Goulash", display = "Redridge Goulash" },
+            { file = "Redridge Mountains\\Foreman Oslows Lost Tools.mp3",  len = 212.04, name = "Foreman Oslows Lost Tools", display = "Foreman Oslow's Lost Tools" },
+            { file = "Redridge Mountains\\GathIlzogg Over Stonewatch.mp3", len = 212.47, name = "GathIlzogg Over Stonewatch", display = "Gath'Ilzogg Over Stonewatch" },
+            { file = "Redridge Mountains\\Hilarys Necklace.mp3",           len = 199.58, name = "Hilarys Necklace", display = "Hilary's Necklace" },
         },
         -- Subzone fallback: "Lakeshire Inn" (named row of WMO 144 set 1).
         inns = { "Lakeshire Inn" },
@@ -832,12 +842,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Stonetalon Mountains\\Stonetalon Peak.mp3",           len = 204.84, name = "Stonetalon Peak" },
-            { file = "Stonetalon Mountains\\Windshear Crag.mp3",            len = 232.03, name = "Windshear Crag" },
-            { file = "Stonetalon Mountains\\Sun Rock Retreat.mp3",          len = 191.54, name = "Sun Rock Retreat" },
-            { file = "Stonetalon Mountains\\Mirkfallon Lake at Noon.mp3",   len = 213.62, name = "Mirkfallon Lake at Noon" },
-            { file = "Stonetalon Mountains\\Charred Vale by Moonlight.mp3", len = 212.52, name = "Charred Vale by Moonlight" },
-            { file = "Stonetalon Mountains\\Webwinder Path Nightfall.mp3",  len = 209.88, name = "Webwinder Path Nightfall" },
+            { file = "Stonetalon Mountains\\Darkness of the Talondeep Path.mp3", len = 204.84, name = "Darkness of the Talondeep Path", display = "Darkness of the Talondeep Path" },
+            { file = "Stonetalon Mountains\\The Super Reaper 6000.mp3",          len = 232.03, name = "The Super Reaper 6000", display = "The Super Reaper 6000" },
+            { file = "Stonetalon Mountains\\Protect Kaya Flathoof.mp3",          len = 191.54, name = "Protect Kaya Flathoof", display = "Protect Kaya Flathoof" },
+            { file = "Stonetalon Mountains\\JinZils Forest Magic.mp3",           len = 213.62, name = "JinZils Forest Magic", display = "Jin'Zil's Forest Magic" },
+            { file = "Stonetalon Mountains\\Where the Bloodfury Roost.mp3",      len = 212.52, name = "Where the Bloodfury Roost", display = "Where the Bloodfury Roost" },
+            { file = "Stonetalon Mountains\\Besseleths Web.mp3",                 len = 209.88, name = "Besseleths Web", display = "Besseleth's Web" },
         },
         -- Stonetalon Peak and Sun Rock Retreat inns have no tavern music. Malaka'jin (area 2539) plays Zone-TavernHorde outdoors too.
         inns = {},
@@ -867,12 +877,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Duskwood\\Darkshire Watch.mp3",          len = 172.82, name = "Darkshire Watch" },
-            { file = "Duskwood\\Raven Hill Cemetery.mp3",      len = 173.42, name = "Raven Hill Cemetery" },
-            { file = "Duskwood\\Stitches at Midnight.mp3",     len = 218.83, name = "Stitches at Midnight" },
-            { file = "Duskwood\\Manor Mistmantle Moon.mp3",    len = 202.92, name = "Manor Mistmantle Moon" },
-            { file = "Duskwood\\Night Watch of Darkshire.mp3", len = 174.43, name = "Night Watch of Darkshire" },
-            { file = "Duskwood\\Morbent Fels Curse.mp3",       len = 162.84, name = "Morbent Fels Curse" },
+            { file = "Duskwood\\Worgen in the Woods.mp3",           len = 172.82, name = "Worgen in the Woods", display = "Worgen in the Woods" },
+            { file = "Duskwood\\Elizas Shallow Grave.mp3",          len = 173.42, name = "Elizas Shallow Grave", display = "Eliza's Shallow Grave" },
+            { file = "Duskwood\\Stitches Marches on Darkshire.mp3", len = 218.83, name = "Stitches Marches on Darkshire", display = "Stitches Marches on Darkshire" },
+            { file = "Duskwood\\Ballad of Stalvan Mistmantle.mp3",  len = 202.92, name = "Ballad of Stalvan Mistmantle", display = "Ballad of Stalvan Mistmantle" },
+            { file = "Duskwood\\Ebonlockes Night Watch.mp3",        len = 174.43, name = "Ebonlockes Night Watch", display = "Ebonlocke's Night Watch" },
+            { file = "Duskwood\\Morbents Bane.mp3",                 len = 162.84, name = "Morbents Bane", display = "Morbent's Bane" },
         },
         -- Subzone fallback: "Scarlet Raven Tavern" (named row of WMO 133 set 2).
         inns = { "Scarlet Raven Tavern" },
@@ -903,12 +913,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Ashenvale\\Secrets of Uldaman.mp3",         len = 172.92, name = "Secrets of Uldaman" },
-            { file = "Ashenvale\\Discs of Norgannon.mp3",         len = 159.12, name = "Discs of Norgannon" },
-            { file = "Ashenvale\\Moonlit Whispers of Ashenvale.mp3", len = 180.00, name = "Moonlit Whispers of Ashenvale" }, -- 0.5.10
-            { file = "Ashenvale\\Twilight Beyond UnGoro.mp3",     len = 179.83, name = "Twilight Beyond UnGoro" },       -- 0.5.10
-            { file = "Ashenvale\\Brann Bronzebeards Journal.mp3", len = 174.79, name = "Brann Bronzebeards Journal" },
-            { file = "Ashenvale\\Maraudons Hidden Depths.mp3",    len = 169.63, name = "Maraudons Hidden Depths" },
+            { file = "Ashenvale\\Where Mannoroth Fell.mp3",        len = 172.92, name = "Where Mannoroth Fell", display = "Where Mannoroth Fell" },
+            { file = "Ashenvale\\Lament for Cenarius.mp3",         len = 159.12, name = "Lament for Cenarius", display = "Lament for Cenarius" },
+            { file = "Ashenvale\\Whispers at Aessinas Shrine.mp3", len = 180.00, name = "Whispers at Aessinas Shrine", display = "Whispers at Aessina's Shrine" },
+            { file = "Ashenvale\\Twilight at Bough Shadow.mp3",    len = 179.83, name = "Twilight at Bough Shadow", display = "Twilight at Bough Shadow" },
+            { file = "Ashenvale\\Raenes Cleansing.mp3",            len = 174.79, name = "Raenes Cleansing", display = "Raene's Cleansing" },
+            { file = "Ashenvale\\Akumai of Blackfathom Deeps.mp3", len = 169.63, name = "Akumai of Blackfathom Deeps", display = "Aku'mai of Blackfathom Deeps" },
         },
         -- No building with tavern music (Astranaar nightelfinn 727, Splintertree orcinn 1849). Zoram'gar Outpost (area 2897) plays
         -- Zone-TavernHorde outdoors; a camp, not a building, so the rotation keeps playing (add it to inns to go quiet there).
@@ -933,12 +943,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Wetlands\\Behind the Greymane Wall.mp3", len = 183.00, name = "Behind the Greymane Wall" },
-            { file = "Wetlands\\Stonards Grey Dawn.mp3",       len = 193.15, name = "Stonards Grey Dawn" },
-            { file = "Wetlands\\Deadwind Pass Nightfall.mp3",  len = 199.99, name = "Deadwind Pass Nightfall" },
-            { file = "Wetlands\\Sorrowmurk Moon.mp3",          len = 187.87, name = "Sorrowmurk Moon" },
-            { file = "Wetlands\\Rain on Grim Batol.mp3",       len = 142.75, name = "Rain on Grim Batol" },
-            { file = "Wetlands\\Winds of Desolace.mp3",        len = 182.42, name = "Winds of Desolace" },
+            { file = "Wetlands\\Captive Queen of Grim Batol.mp3",   len = 183.00, name = "Captive Queen of Grim Batol", display = "Captive Queen of Grim Batol" },
+            { file = "Wetlands\\Stoutfist Holds Menethil Keep.mp3", len = 193.15, name = "Stoutfist Holds Menethil Keep", display = "Stoutfist Holds Menethil Keep" },
+            { file = "Wetlands\\Fall of Dun Modr.mp3",              len = 199.99, name = "Fall of Dun Modr", display = "Fall of Dun Modr" },
+            { file = "Wetlands\\Ironbeards Silent Tomb.mp3",        len = 187.87, name = "Ironbeards Silent Tomb", display = "Ironbeard's Silent Tomb" },
+            { file = "Wetlands\\Rain on the Thandol Span.mp3",      len = 142.75, name = "Rain on the Thandol Span", display = "Rain on the Thandol Span" },
+            { file = "Wetlands\\Wings of the Dragonmaw.mp3",        len = 182.42, name = "Wings of the Dragonmaw", display = "Wings of the Dragonmaw" },
         },
         -- Subzone fallbacks: "Deepwater Tavern" (named row of WMO 53 set 1) and "The Drunken Dwarf" (Forever-only subzone,
         -- AreaTable 17738, Zone-DwavesTavern, 4 terrain chunks near 52,80 by the dwarven tunnels; not in Classic Era).
@@ -973,12 +983,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Hillsbrad Foothills\\Southshore Orchards.mp3",         len = 209.71, name = "Southshore Orchards" },
-            { file = "Hillsbrad Foothills\\Tarren Mill Shadows.mp3",         len = 196.15, name = "Tarren Mill Shadows" },
-            { file = "Hillsbrad Foothills\\Hillsbrad Harvest.mp3",           len = 204.02, name = "Hillsbrad Harvest" },
-            { file = "Hillsbrad Foothills\\Azurelode Mine Noon.mp3",         len = 193.34, name = "Azurelode Mine Noon" },
-            { file = "Hillsbrad Foothills\\Durnholde Keep by Moonlight.mp3", len = 198.24, name = "Durnholde Keep by Moonlight" },
-            { file = "Hillsbrad Foothills\\Darrow Hill Nocturne.mp3",        len = 193.46, name = "Darrow Hill Nocturne" },
+            { file = "Hillsbrad Foothills\\Southshore Versus Tarren Mill.mp3", len = 209.71, name = "Southshore Versus Tarren Mill", display = "Southshore Versus Tarren Mill" },
+            { file = "Hillsbrad Foothills\\Apothecary Lydons Experiment.mp3",  len = 196.15, name = "Apothecary Lydons Experiment", display = "Apothecary Lydon's Experiment" },
+            { file = "Hillsbrad Foothills\\Farmer Rays Last Harvest.mp3",      len = 204.02, name = "Farmer Rays Last Harvest", display = "Farmer Ray's Last Harvest" },
+            { file = "Hillsbrad Foothills\\Last Stand at Dun Garok.mp3",       len = 193.34, name = "Last Stand at Dun Garok", display = "Last Stand at Dun Garok" },
+            { file = "Hillsbrad Foothills\\Thralls Escape from Durnholde.mp3", len = 198.24, name = "Thralls Escape from Durnholde", display = "Thrall's Escape from Durnholde" },
+            { file = "Hillsbrad Foothills\\The Traitor King of Alterac.mp3",   len = 193.46, name = "The Traitor King of Alterac", display = "The Traitor King of Alterac" },
         },
         -- Tarren Mill inn (duskwoodabandoned house WMO 121) has no tavern music. No subzone of its own for the Southshore inn.
         inns = {},
@@ -1011,12 +1021,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Stranglethorn Vale\\Canopy Mist.mp3",              len = 179.76, name = "Canopy Mist" },
-            { file = "Stranglethorn Vale\\Nesingwarys Quiet Camp.mp3",   len = 198.67, name = "Nesingwarys Quiet Camp" },
-            { file = "Stranglethorn Vale\\Booty Bay Sunset.mp3",         len = 180.02, name = "Booty Bay Sunset" },
-            { file = "Stranglethorn Vale\\Gromgol Shade.mp3",            len = 180.00, name = "Gromgol Shade" },
-            { file = "Stranglethorn Vale\\Hush of the Jungle Ruins.mp3", len = 179.90, name = "Hush of the Jungle Ruins" },
-            { file = "Stranglethorn Vale\\Jungle Heartbeat.mp3",         len = 179.90, name = "Jungle Heartbeat" },
+            { file = "Stranglethorn Vale\\Echoes of the Gurubashi.mp3",          len = 179.76, name = "Echoes of the Gurubashi", display = "Echoes of the Gurubashi" },
+            { file = "Stranglethorn Vale\\The Green Hills of Stranglethorn.mp3", len = 198.67, name = "The Green Hills of Stranglethorn", display = "The Green Hills of Stranglethorn" },
+            { file = "Stranglethorn Vale\\Riggle Bassbaits Tournament.mp3",      len = 180.02, name = "Riggle Bassbaits Tournament", display = "Riggle Bassbait's Tournament" },
+            { file = "Stranglethorn Vale\\Saving Yenniku.mp3",                   len = 180.00, name = "Saving Yenniku", display = "Saving Yenniku" },
+            { file = "Stranglethorn Vale\\Hakkar Sleeps in ZulGurub.mp3",        len = 179.90, name = "Hakkar Sleeps in ZulGurub", display = "Hakkar Sleeps in Zul'Gurub" },
+            { file = "Stranglethorn Vale\\Stranglethorn Fever.mp3",              len = 179.90, name = "Stranglethorn Fever", display = "Stranglethorn Fever" },
         },
         -- Subzone fallbacks: "The Salty Sailor Tavern" / "The Salty Sailor" (named rows of the Booty Bay WMO 21064).
         -- Grom'gol inn (orczeppelinhouse WMO 3113) has no tavern music.
@@ -1075,12 +1085,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Zephras Isle\\Winds Over Valanaar.mp3",         len = 180.00, name = "Winds Over Valanaar" },
-            { file = "Zephras Isle\\Gustberry Lowlands.mp3",          len = 180.00, name = "Gustberry Lowlands" },
-            { file = "Zephras Isle\\Stillness of Windsong Lake.mp3",  len = 179.64, name = "Stillness of Windsong Lake" },
-            { file = "Zephras Isle\\Shendar Highlands.mp3",           len = 179.59, name = "Shendar Highlands" },
-            { file = "Zephras Isle\\Shrine of the Storm Spirits.mp3", len = 179.59, name = "Shrine of the Storm Spirits" },
-            { file = "Zephras Isle\\Shadowgale Forest.mp3",           len = 180.02, name = "Shadowgale Forest" },
+            { file = "Zephras Isle\\Skydocks of Valanaar.mp3",      len = 180.00, name = "Skydocks of Valanaar", display = "Skydocks of Valanaar" },
+            { file = "Zephras Isle\\Gift of Skysight.mp3",          len = 180.00, name = "Gift of Skysight", display = "Gift of Skysight" },
+            { file = "Zephras Isle\\Windsong Standing Stones.mp3",  len = 179.64, name = "Windsong Standing Stones", display = "Windsong Standing Stones" },
+            { file = "Zephras Isle\\Exiles of EldreThalas.mp3",     len = 179.59, name = "Exiles of EldreThalas", display = "Exiles of Eldre'Thalas" },
+            { file = "Zephras Isle\\The Vanished Wind Spirits.mp3", len = 179.59, name = "The Vanished Wind Spirits", display = "The Vanished Wind Spirits" },
+            { file = "Zephras Isle\\Shadows of Banaethal.mp3",      len = 180.02, name = "Shadows of Banaethal", display = "Shadows of Ban'aethal" },
         },
         -- No tavern music anywhere on the isle: the Windshaper Lodge (Valanaar) and High Order Lodge rows of WMO 893 set
         -- no music of their own (they inherit the area's), so the rotation keeps playing inside. No inns, no inn spots.
@@ -1115,7 +1125,9 @@ for key, z in pairs(ZONES) do
     end
     for _, t in ipairs(z.customs or {}) do
         if type(t.len) == "number" and t.len > 0 then -- guard against a bad entry (no timer on a missing length)
-            z.customTracks[#z.customTracks + 1] = { name = t.name, file = ADDON_DIR .. t.file, duration = t.len }
+            -- 0.5.12: the title shown to the player is display (with apostrophes), else name, else the file name
+            local title = t.display or t.name or tostring(t.file):match("([^\\/]+)%.[Mm][Pp]3$") or tostring(t.file)
+            z.customTracks[#z.customTracks + 1] = { name = title, fileName = t.name, file = ADDON_DIR .. t.file, duration = t.len }
         end
     end
 end
@@ -1625,7 +1637,7 @@ local function IsHandlePlaying()
     return playing and true or false
 end
 
-local function MarkInterrupted()
+local function FlagInterrupted()
     if S.timer then S.timer:Cancel(); S.timer = nil end -- pause: never advance while interrupted
     if not S.interrupted and not S.resuming then Debug("interrupted: " .. S.track.name) end
     S.interrupted = true
@@ -1669,7 +1681,7 @@ local function Poll()
     if not S.isPlayingWorks and not S.sawPlaying then return end -- IsPlaying not trusted yet
     local elapsed = now - S.startTime
     if not S.sawPlaying and elapsed < CONFIRM then return end
-    if S.track.duration - elapsed > MIN_LEFT then MarkInterrupted() end
+    if S.track.duration - elapsed > MIN_LEFT then FlagInterrupted() end
 end
 
 local function StartTracking(track)
@@ -2357,7 +2369,7 @@ end
 --   "Leveling Zone Music" label, dropdown, both descriptions (0.5.9) | Music volume slider |
 --   Skip + song playing now | "/mplus at any time" note | Close (bottom center; "Got it" before 0.5.9). X / Escape / Close close it.
 local function CreateOptionsWindow()
-    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.10")
+    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.12")
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, relPoint, px, py = self:GetPoint()
@@ -2739,4 +2751,4 @@ f:SetScript("OnUpdate", function()
     lastFrame = now
 end)
 
-Print("v0.5.10 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
+Print("v0.5.12 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")

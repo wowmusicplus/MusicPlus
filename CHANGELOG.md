@@ -2,6 +2,13 @@
 
 All notable changes to MusicPlus. Versions are for WoW Forever 1.60.1 (Interface 16001).
 
+## 0.5.12
+
+Changes since 0.5.10:
+
+- Renamed all 150 custom songs with titles drawn from the lore of vanilla WoW and earlier Warcraft games (same songs, same zones). The song files in each zone folder carry the new names.
+- Song titles now show proper punctuation in game, e.g. "Vol'jin's Counsel" and "Hakkar Sleeps in Zul'Gurub", in the "Now playing" chat line, `/mplus status`, `/mplus test` and the options window. File names stay without apostrophes.
+
 ## 0.5.10
 
 Changes since 0.5.7:

@@ -2,7 +2,7 @@
 ## Title: MusicPlus
 ## Notes: 6 capitals and 19 zones (Alliance and Horde, levels 1-45, plus the Skyborne starting zone Zephras Isle): all original zone tracks (shuffled), then 6 custom songs per zone (shuffled), looping, on the Music channel. Inns with their own music keep it. /mplus for options.
 ## Author: wowmusicplus
-## Version: 0.5.10
+## Version: 0.5.12
 ## Category-enUS: Audio
 ## SavedVariables: MusicPlusDB
 
