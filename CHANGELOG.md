@@ -2,6 +2,12 @@
 
 All notable changes to MusicPlus. Versions are for WoW Forever 1.60.1 (Interface 16001).
 
+## 0.5.15
+
+Changes since 0.5.14:
+
+- Updated music in Thunder Bluff: "Magatha Grimtotem's Dusk" and "Mists of the Pools of Vision" are new takes (same titles and file names).
+
 ## 0.5.14
 
 Changes since 0.5.12:

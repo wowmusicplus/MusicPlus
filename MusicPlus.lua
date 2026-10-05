@@ -1,4 +1,6 @@
---[[ MusicPlus 0.5.14 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+--[[ MusicPlus 0.5.15 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+0.5.15: Thunder Bluff's "Magatha Grimtotem's Dusk" and "Mists of the Pools of Vision" replaced with new takes
+(same file paths and titles; len 179.71 -> 180.00 and 179.90 -> 179.64). No code changes.
 0.5.14: Stonetalon Mountains' "Protect Kaya Flathoof" replaced with a calmer take (same file path and title,
 len 191.54 -> 178.82). No code changes.
 0.5.13: the Music volume can no longer get stuck at 0 after an inn (reported in Darkshire's Scarlet Raven Tavern).
@@ -457,8 +459,8 @@ local ZONES = {
         customs = {
             { file = "Thunder Bluff\\Cairne Bloodhoofs Peace.mp3",      len = 179.95, name = "Cairne Bloodhoofs Peace", display = "Cairne Bloodhoof's Peace" },
             { file = "Thunder Bluff\\The Long Trek to Mulgore.mp3",     len = 179.95, name = "The Long Trek to Mulgore", display = "The Long Trek to Mulgore" },
-            { file = "Thunder Bluff\\Magatha Grimtotems Dusk.mp3",      len = 179.71, name = "Magatha Grimtotems Dusk", display = "Magatha Grimtotem's Dusk" },
-            { file = "Thunder Bluff\\Mists of the Pools of Vision.mp3", len = 179.90, name = "Mists of the Pools of Vision", display = "Mists of the Pools of Vision" },
+            { file = "Thunder Bluff\\Magatha Grimtotems Dusk.mp3",      len = 180.00, name = "Magatha Grimtotems Dusk", display = "Magatha Grimtotem's Dusk" },
+            { file = "Thunder Bluff\\Mists of the Pools of Vision.mp3", len = 179.64, name = "Mists of the Pools of Vision", display = "Mists of the Pools of Vision" },
             { file = "Thunder Bluff\\Archdruid Hamuuls Teachings.mp3",  len = 184.82, name = "Archdruid Hamuuls Teachings", display = "Archdruid Hamuul's Teachings" },
             { file = "Thunder Bluff\\The Centaur War Remembered.mp3",   len = 180.02, name = "The Centaur War Remembered", display = "The Centaur War Remembered" },
         },
@@ -2473,7 +2475,7 @@ end
 --   "Leveling Zone Music" label, dropdown, both descriptions (0.5.9) | Music volume slider |
 --   Skip + song playing now | "/mplus at any time" note | Close (bottom center; "Got it" before 0.5.9). X / Escape / Close close it.
 local function CreateOptionsWindow()
-    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.14")
+    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.15")
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, relPoint, px, py = self:GetPoint()
@@ -2870,4 +2872,4 @@ f:SetScript("OnUpdate", function()
     lastFrame = now
 end)
 
-Print("v0.5.14 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
+Print("v0.5.15 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
