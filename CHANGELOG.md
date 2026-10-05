@@ -2,6 +2,13 @@
 
 All notable changes to MusicPlus. Versions are for WoW Forever 1.60.1 (Interface 16001).
 
+## 0.5.14
+
+Changes since 0.5.12:
+
+- Fixed the Music volume getting stuck at 0 after entering some inns (for example the Scarlet Raven Tavern in Darkshire), which also kept the tavern music from playing. Your Music volume is now always put back after the fade-out, and MusicPlus checks it again at login, `/reload`, loading screens and zone changes. If an older version left your Music volume at 0, the first load of this version sets it back to your last volume (or the game default of 40%) once and says so in chat.
+- Updated music in Stonetalon Mountains: "Protect Kaya Flathoof" is now a calmer take (same title and file name).
+
 ## 0.5.12
 
 Changes since 0.5.10:

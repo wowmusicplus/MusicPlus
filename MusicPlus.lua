@@ -1,4 +1,22 @@
---[[ MusicPlus 0.5.12 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+--[[ MusicPlus 0.5.14 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+0.5.14: Stonetalon Mountains' "Protect Kaya Flathoof" replaced with a calmer take (same file path and title,
+len 191.54 -> 178.82). No code changes.
+0.5.13: the Music volume can no longer get stuck at 0 after an inn (reported in Darkshire's Scarlet Raven Tavern).
+Cause: FadeStep treated ANY difference between the volume it had just written and the volume the client reported back
+as "the player moved the slider" and adopted the fading value as the saved volume. If the client reports the value
+back even slightly differently (rounded, or one step late), every step re-adopted its own fading value, so the
+"saved" volume shrank with the fade and was restored as ~0 (0% in the inn, so no tavern music either, and still 0%
+outside, because the next rotation and every later fade started from it). Fix: the fade never reads its own steps
+back; a mid-fade change is adopted only from our slider or a CVAR_UPDATE that isn't one of our own writes (not during
+our SetCVar, and not within 0.011 of any value this fade wrote). The restore after the fade runs even if stopping the
+song errors (pcall), and a watchdog ends a fade that runs 3 s past its length. Volume safety: MusicPlusDB.volZeroed
+is set when a fade writes 0 and cleared when the saved volume is put back; MusicPlusDB.lastVolume keeps the player's
+last volume above 0. On login, /reload, loading screens, zone/subzone changes, each position poll and every rotation
+start, a Music volume of 0 that MusicPlus left (volZeroed, or an unfinished fade) is put back. One-time on the first
+0.5.13 load: a Music volume below 1% (left at 0 by 0.5.12) is set back to lastVolume, else the game default 40%,
+with a chat line. Darkshire's tavern keeps its inn status: WMOAreaTable 20505 (WMO 133 name set 2, "Scarlet Raven
+Tavern") plays ZoneMusic 156 Zone-TavernAlliance in Forever 1.60.1 and Classic Era 1.15.9, like the Lion's Pride Inn,
+so MusicPlus fades out there and the game's tavern music plays at your volume. Inn detection is unchanged.
 0.5.12: song titles with proper punctuation. Every customs entry gets display = the approved title with its apostrophes
 ("Vol'jin's Counsel"); file and name stay the apostrophe-free file name ("Voljins Counsel"), so no MP3 changes.
 Track objects take name = display (fallback: name, then the file name), so "Now playing", /mplus test, /mplus status,
@@ -158,7 +176,8 @@ cancelled, the song keeps playing), /mplus off/mode/test, loading screens (PLAYE
 /reload (PLAYER_LOGOUT). It's also kept in MusicPlusDB.fadeVolume while fading and restored at the next load
 if the client crashed mid-fade. A volume change during a fade (our slider or Blizzard's) becomes the new
 saved volume; the options slider always shows the saved volume, never the fading one.
-SavedVariables MusicPlusDB (bgSound, enabled, mode, window position, innSpots, fadeVolume, loop, titles, welcomeShown, pool). The beta may not restore
+SavedVariables MusicPlusDB (bgSound, enabled, mode, window position, innSpots, fadeVolume, loop, titles, welcomeShown, pool,
+0.5.13: lastVolume, volZeroed, volCheck0513). The beta may not restore
 SavedVariables; then the defaults apply every login (enabled, mode "music", background sound turned ON, Loop music ON,
 song titles OFF, Leveling Zone Music "For this zone only"). ]]
 
@@ -844,7 +863,7 @@ local ZONES = {
         customs = {
             { file = "Stonetalon Mountains\\Darkness of the Talondeep Path.mp3", len = 204.84, name = "Darkness of the Talondeep Path", display = "Darkness of the Talondeep Path" },
             { file = "Stonetalon Mountains\\The Super Reaper 6000.mp3",          len = 232.03, name = "The Super Reaper 6000", display = "The Super Reaper 6000" },
-            { file = "Stonetalon Mountains\\Protect Kaya Flathoof.mp3",          len = 191.54, name = "Protect Kaya Flathoof", display = "Protect Kaya Flathoof" },
+            { file = "Stonetalon Mountains\\Protect Kaya Flathoof.mp3",          len = 178.82, name = "Protect Kaya Flathoof", display = "Protect Kaya Flathoof" },
             { file = "Stonetalon Mountains\\JinZils Forest Magic.mp3",           len = 213.62, name = "JinZils Forest Magic", display = "Jin'Zil's Forest Magic" },
             { file = "Stonetalon Mountains\\Where the Bloodfury Roost.mp3",      len = 212.52, name = "Where the Bloodfury Roost", display = "Where the Bloodfury Roost" },
             { file = "Stonetalon Mountains\\Besseleths Web.mp3",                 len = 209.88, name = "Besseleths Web", display = "Besseleth's Web" },
@@ -1185,7 +1204,8 @@ local S = {
     zone = nil, nOrig = 0, nCustom = 0, lastFile = nil, mutedIDs = nil, pendingSwitch = nil,
     posTicker = nil, seenState = nil, seenCount = 0, restoreTimer = nil,
     innSpot = nil, innZone = nil, innEnter = 0, innOut = 0, innFar = 0, -- inn-spot hysteresis (latch)
-    fade = nil, -- volume fade-out in progress: { orig (number), origStr, last, start, dur, ticker, finishing }
+    fade = nil, -- volume fade-out in progress: { orig (number), origStr, last, start, dur, ticker, finishing, wrote (0.5.13) }
+    volWriting = false, -- 0.5.13: true during our own Sound_MusicVolume SetCVar (CVAR_UPDATE ignores it)
     gap = nil,  -- 0.5.1 silence between tracks (Loop music off): { start, dur, ticker }; the timer is S.timer
     -- 0.5.3: flight lock and border delay
     taxi = false, taxiZone = nil, -- flight lock on / the zone it keeps playing (nil = MusicPlus off for this flight)
@@ -1472,14 +1492,31 @@ local function SavedVolume()
     return tonumber(CVarGet(VOL_CVAR) or "") or 0
 end
 
+-- 0.5.13: every volume write of ours goes through here, so CVAR_UPDATE can tell our writes from the player's.
+local function SetVolume(str)
+    S.volWriting = true
+    CVarSet(VOL_CVAR, str)
+    S.volWriting = false
+    local v = tonumber(str)
+    if type(DB) == "table" and v and v > 0 and not S.fade then DB.lastVolume = tostring(str) end
+end
+
+-- 0.5.13: put the player's volume back (end of a fade, fade cancelled, safety) and clear the "left at 0" flags.
+local function PutVolumeBack(str)
+    SetVolume(str)
+    if type(DB) == "table" then
+        DB.fadeVolume, DB.volZeroed = nil, nil
+        if tonumber(str) and tonumber(str) > 0 then DB.lastVolume = tostring(str) end
+    end
+end
+
 -- Stop fading and put the saved volume back exactly. The song (if any) keeps playing.
 local function CancelFade(why)
     local fd = S.fade
     if not fd then return end
     if fd.ticker then fd.ticker:Cancel() end
     S.fade = nil
-    CVarSet(VOL_CVAR, fd.origStr)
-    if type(DB) == "table" then DB.fadeVolume = nil end
+    PutVolumeBack(fd.origStr)
     if why then Debug("fade cancelled (" .. why .. "), volume back to " .. fd.origStr) end
 end
 
@@ -1489,27 +1526,64 @@ local function AdoptFadeVolume(num, str)
     if not fd then return end
     fd.orig, fd.origStr = num, str or ("%.2f"):format(num)
     DB.fadeVolume = fd.origStr
+    if num > 0 then DB.lastVolume = fd.origStr end
     Debug("volume changed during the fade: saved volume is now " .. fd.origStr)
 end
+
+-- 0.5.13: was value v written by this fade (within 0.011: a client that rounds to 2 decimals or reports a step late)?
+local FADE_ECHO = 0.011
+local function FadeWrote(v)
+    local fd = S.fade
+    if not fd then return false end
+    if math.abs(v - fd.orig) <= FADE_ECHO then return true end
+    for _, w in ipairs(fd.wrote) do if math.abs(v - w) <= FADE_ECHO then return true end end
+    return false
+end
+
+-- 0.5.13: CVAR_UPDATE for the Music volume. Mid-fade, a value that isn't one of our own steps is the player's new
+-- setting. Outside a fade, a volume above 0 is remembered (MusicPlusDB.lastVolume) for the volume safety.
+local function OnVolumeUpdate(value)
+    if S.volWriting then return end
+    local v = tonumber(value or CVarGet(VOL_CVAR) or "")
+    if not v then return end
+    local fd = S.fade
+    if fd then
+        if fd.finishing or FadeWrote(v) then return end
+        AdoptFadeVolume(v, tostring(value or CVarGet(VOL_CVAR)))
+    elseif v > 0 then
+        local cur = tonumber(CVarGet(VOL_CVAR) or "")
+        if cur and math.abs(cur - v) > FADE_ECHO then return end -- a late event (e.g. a step of a finished fade)
+        DB.lastVolume = tostring(value or CVarGet(VOL_CVAR))
+        DB.volZeroed = nil -- the player set a volume: nothing of ours to put back
+    end
+end
+
+local FADE_WATCHDOG = 3 -- s past a fade's length: it's stuck, put the volume back
 
 local function FadeStep()
     local fd = S.fade
     if not fd or fd.finishing then return end
-    -- someone else changed the volume since our last step: that's the player's new setting
-    local cur = tonumber(CVarGet(VOL_CVAR) or "")
-    if cur and fd.last and math.abs(cur - fd.last) > 0.002 then AdoptFadeVolume(cur, CVarGet(VOL_CVAR)) end
+    -- 0.5.13: never read our own steps back (the client may report them rounded or late): a mid-fade change by the
+    -- player comes in through the slider (AdoptFadeVolume) or CVAR_UPDATE (OnVolumeUpdate).
     local frac = (GetTime() - fd.start) / fd.dur
     if frac >= 1 then
         fd.last = 0
-        CVarSet(VOL_CVAR, "0")
+        DB.volZeroed = true -- cleared when the saved volume is put back (PutVolumeBack)
+        SetVolume("0")
         fd.finishing = true
         if fd.ticker then fd.ticker:Cancel(); fd.ticker = nil end
-        fd.onDone()
+        local ok, err = pcall(fd.onDone)
+        if not ok then
+            Debug("fade end failed (" .. tostring(err) .. "), volume back to " .. fd.origStr)
+            if S.fade == fd then S.fade = nil end
+            PutVolumeBack(fd.origStr)
+        end
         return
     end
-    local v = fd.orig * (1 - frac)
-    fd.last = tonumber(("%.3f"):format(v))
-    CVarSet(VOL_CVAR, ("%.3f"):format(v))
+    local str = ("%.3f"):format(fd.orig * (1 - frac))
+    fd.last = tonumber(str)
+    fd.wrote[#fd.wrote + 1] = fd.last
+    SetVolume(str)
 end
 
 -- Ramp the Music volume down to 0 over dur seconds, then call onDone (which must stop the music and call
@@ -1522,10 +1596,38 @@ local function FadeOut(dur, onDone)
             and CVarGet("Sound_EnableAllSound") ~= "0") then
         onDone(); return
     end
-    S.fade = { orig = orig, origStr = str, last = orig, start = GetTime(), dur = dur, onDone = onDone }
+    S.fade = { orig = orig, origStr = str, last = orig, start = GetTime(), dur = dur, onDone = onDone, wrote = {} }
     DB.fadeVolume = str
+    DB.lastVolume = str
     Debug(("fading out over %.1f s from volume %s"):format(dur, str))
     S.fade.ticker = C_Timer.NewTicker(FADE_STEP, FadeStep)
+end
+
+-- 0.5.13: volume safety (login, /reload, loading screens, zone changes, position polls, rotation starts). A fade
+-- stuck past its length is ended; a Music volume of 0 that MusicPlus left behind (volZeroed, or an unfinished fade's
+-- fadeVolume) is put back. A 0 the player chose is never touched (setting it clears volZeroed).
+local function VolumeSafety(why)
+    if type(DB) ~= "table" then return end
+    local fd = S.fade
+    if fd then
+        if not fd.finishing and GetTime() - fd.start > fd.dur + FADE_WATCHDOG then
+            if fd.ticker then fd.ticker:Cancel() end
+            S.fade = nil
+            PutVolumeBack(fd.origStr)
+            Debug("fade stuck (" .. why .. "), volume back to " .. fd.origStr)
+        end
+        return
+    end
+    if not (DB.volZeroed or DB.fadeVolume) then return end
+    local cur = tonumber(CVarGet(VOL_CVAR) or "")
+    local saved = (type(DB.fadeVolume) == "string" and tonumber(DB.fadeVolume) and DB.fadeVolume)
+        or (type(DB.lastVolume) == "string" and tonumber(DB.lastVolume) and DB.lastVolume) or nil
+    if cur and cur < 0.005 and saved and tonumber(saved) > 0 then
+        PutVolumeBack(saved)
+        Print("Music volume restored to " .. math.floor(tonumber(saved) * 100 + 0.5) .. "% (MusicPlus had left it at 0).")
+    else
+        DB.fadeVolume, DB.volZeroed = nil, nil
+    end
 end
 
 local function Shuffled(list)
@@ -1751,6 +1853,7 @@ local function WarnIfMusicOff()
 end
 
 local function StartRotation(z)
+    VolumeSafety("rotation start") -- 0.5.13
     S.active, S.zone = true, z
     WarnIfMusicOff()
     Debug("starting rotation for " .. z.title)
@@ -1774,17 +1877,17 @@ end
 local function FadeStopRotation(dur)
     FadeOut(dur, function()
         local fd = S.fade
-        StopRotation(0, false)                        -- StopMusic() while the volume is 0
+        local ok, err = pcall(StopRotation, 0, false) -- StopMusic() while the volume is 0
         if fd then
             RestoreGameMusic()                        -- Music off now (on again in 0.1 s), if it was on
             S.fade = nil
-            CVarSet(VOL_CVAR, fd.origStr)             -- the exact saved volume
-            DB.fadeVolume = nil
+            PutVolumeBack(fd.origStr)                 -- the exact saved volume (0.5.13: even if the stop failed)
             Debug("fade done, volume back to " .. fd.origStr)
         else
             RestoreGameMusic()
         end
-        RefreshUI()
+        if not ok then Debug("stop after the fade failed: " .. tostring(err)) end
+        pcall(RefreshUI)
     end)
 end
 
@@ -1966,6 +2069,7 @@ local function WantedZone()
 end
 
 local function PollPosition()
+    VolumeSafety("poll") -- 0.5.13: cheap unless a fade is stuck or MusicPlus left the volume at 0
     local taxi = UpdateTaxi() -- 0.5.3: flight lock (engaged on takeoff, released on landing)
     if taxi == "landed" then ScheduleEvaluate(0) end
     if not DB.enabled or S.testing then S.seenState, S.seenCount = nil, 0; SetInnLatch(nil); return end
@@ -2262,7 +2366,7 @@ local function BuildControls(parent, prefix, x, y, opts)
         self.Text:SetText(("Music volume: %d%%"):format(value))
         if self.refreshing then return end
         if S.fade then AdoptFadeVolume(value / 100) -- during a fade: new saved volume, the fade goes on
-        else CVarSet(VOL_CVAR, ("%.2f"):format(value / 100)) end
+        else SetVolume(("%.2f"):format(value / 100)) end
     end)
     Tooltip(c.vol, "Music volume", "Sets the game's Music volume (" .. VOL_CVAR .. "). MusicPlus plays on " ..
         "the Music channel, so this is also the volume of the game's own music. Ambient sounds aren't affected.")
@@ -2369,7 +2473,7 @@ end
 --   "Leveling Zone Music" label, dropdown, both descriptions (0.5.9) | Music volume slider |
 --   Skip + song playing now | "/mplus at any time" note | Close (bottom center; "Got it" before 0.5.9). X / Escape / Close close it.
 local function CreateOptionsWindow()
-    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.12")
+    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.14")
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, relPoint, px, py = self:GetPoint()
@@ -2700,16 +2804,29 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
         if type(DB.titles) ~= "boolean" then DB.titles = false end  -- 0.5.1: song titles in chat, default OFF
         if DB.pool ~= "all" then DB.pool = "zone" end              -- 0.5.7: Leveling Zone Music, default this zone only
         if type(DB.disabledZones) ~= "table" then DB.disabledZones = {} end -- 0.5.9: zone title -> true
-        if type(DB.fadeVolume) == "string" and tonumber(DB.fadeVolume) then
-            CVarSet(VOL_CVAR, DB.fadeVolume) -- the client stopped mid-fade last time: put the volume back
-            Print("Music volume restored to " .. math.floor(tonumber(DB.fadeVolume) * 100 + 0.5) .. "% (a fade-out was interrupted).")
+        if type(DB.fadeVolume) == "string" and tonumber(DB.fadeVolume) and tonumber(DB.fadeVolume) > 0 then
+            PutVolumeBack(DB.fadeVolume) -- the client stopped mid-fade last time: put the volume back
+            Print("Music volume restored to " .. math.floor(tonumber(DB.fadeVolume or CVarGet(VOL_CVAR)) * 100 + 0.5) .. "% (a fade-out was interrupted).")
         end
         DB.fadeVolume = nil
+        VolumeSafety("login") -- 0.5.13: a 0 that a fade left behind (volZeroed)
+        if not DB.volCheck0513 then -- 0.5.13, once: 0.5.12 could leave the Music volume at 0 after an inn
+            DB.volCheck0513 = true
+            local cur = tonumber(CVarGet(VOL_CVAR) or "")
+            if cur and cur < 0.01 then
+                local back = (type(DB.lastVolume) == "string" and tonumber(DB.lastVolume) and tonumber(DB.lastVolume) > 0) and DB.lastVolume or "0.4"
+                PutVolumeBack(back)
+                Print("Music volume was 0% (an older MusicPlus could leave it there after an inn); set back to " ..
+                    math.floor(tonumber(back) * 100 + 0.5) .. "%. Change it any time in /mplus.")
+            end
+        end
+        do local v = tonumber(CVarGet(VOL_CVAR) or "") if v and v > 0 then DB.lastVolume = CVarGet(VOL_CVAR) end end
         pcall(RegisterSettingsPanel)
         StartPositionPoll()
     elseif event == "CVAR_UPDATE" then
         -- remember changes made in Blizzard's Settings too (arg1 = CVar name, arg2 = value)
         if type(arg1) == "string" and arg1:lower() == BG_CVAR:lower() then DB.bgSound = (arg2 ~= "0") end
+        if type(arg1) == "string" and arg1:lower() == VOL_CVAR:lower() then OnVolumeUpdate(arg2) end -- 0.5.13
         if optionsFrame and optionsFrame:IsShown() then RefreshUI() end
     elseif event == "SOUND_DEVICE_UPDATE" then
         ResumeHint("SOUND_DEVICE_UPDATE")
@@ -2722,6 +2839,7 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
         CancelFade("loading screen") -- keep playing; the zone check after loading decides again
     elseif event == "PLAYER_ENTERING_WORLD" then
         S.inWorld = true
+        VolumeSafety("loading screen") -- 0.5.13
         S.promptUntil = GetTime() + PROMPT_WINDOW -- 0.5.3: a teleport is a real move: prompt ~1 s confirmation
         S.needRestart = true -- music stops on loading screens: replay the current track if still in the zone
         ScheduleEvaluate(1.0)
@@ -2735,6 +2853,7 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
     elseif event == "PLAYER_CONTROL_LOST" or event == "PLAYER_CONTROL_GAINED" then -- 0.5.3
         if UpdateTaxi(event) == "landed" then ScheduleEvaluate(0) end
     else
+        VolumeSafety("zone change") -- 0.5.13
         -- 0.5.3: during a walking delay, a zone event that reads any other place breaks it at once
         local ok, want = true, nil
         if LongPending() then ok, want = pcall(ReadZone) end
@@ -2751,4 +2870,4 @@ f:SetScript("OnUpdate", function()
     lastFrame = now
 end)
 
-Print("v0.5.12 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
+Print("v0.5.14 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
