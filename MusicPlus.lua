@@ -1,4 +1,6 @@
---[[ MusicPlus 0.5.15 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+--[[ MusicPlus 0.5.16 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+0.5.16: Hillsbrad Foothills' "Southshore Versus Tarren Mill" and "Apothecary Lydon's Experiment" replaced with
+calmer takes (same file paths and titles; len 209.71 -> 179.64 and 196.15 -> 180.02). No code changes.
 0.5.15: Thunder Bluff's "Magatha Grimtotem's Dusk" and "Mists of the Pools of Vision" replaced with new takes
 (same file paths and titles; len 179.71 -> 180.00 and 179.90 -> 179.64). No code changes.
 0.5.14: Stonetalon Mountains' "Protect Kaya Flathoof" replaced with a calmer take (same file path and title,
@@ -1004,8 +1006,8 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Hillsbrad Foothills\\Southshore Versus Tarren Mill.mp3", len = 209.71, name = "Southshore Versus Tarren Mill", display = "Southshore Versus Tarren Mill" },
-            { file = "Hillsbrad Foothills\\Apothecary Lydons Experiment.mp3",  len = 196.15, name = "Apothecary Lydons Experiment", display = "Apothecary Lydon's Experiment" },
+            { file = "Hillsbrad Foothills\\Southshore Versus Tarren Mill.mp3", len = 179.64, name = "Southshore Versus Tarren Mill", display = "Southshore Versus Tarren Mill" },
+            { file = "Hillsbrad Foothills\\Apothecary Lydons Experiment.mp3",  len = 180.02, name = "Apothecary Lydons Experiment", display = "Apothecary Lydon's Experiment" },
             { file = "Hillsbrad Foothills\\Farmer Rays Last Harvest.mp3",      len = 204.02, name = "Farmer Rays Last Harvest", display = "Farmer Ray's Last Harvest" },
             { file = "Hillsbrad Foothills\\Last Stand at Dun Garok.mp3",       len = 193.34, name = "Last Stand at Dun Garok", display = "Last Stand at Dun Garok" },
             { file = "Hillsbrad Foothills\\Thralls Escape from Durnholde.mp3", len = 198.24, name = "Thralls Escape from Durnholde", display = "Thrall's Escape from Durnholde" },
@@ -2475,7 +2477,7 @@ end
 --   "Leveling Zone Music" label, dropdown, both descriptions (0.5.9) | Music volume slider |
 --   Skip + song playing now | "/mplus at any time" note | Close (bottom center; "Got it" before 0.5.9). X / Escape / Close close it.
 local function CreateOptionsWindow()
-    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.15")
+    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.16")
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, relPoint, px, py = self:GetPoint()
@@ -2872,4 +2874,4 @@ f:SetScript("OnUpdate", function()
     lastFrame = now
 end)
 
-Print("v0.5.15 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
+Print("v0.5.16 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")

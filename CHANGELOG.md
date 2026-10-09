@@ -2,6 +2,12 @@
 
 All notable changes to MusicPlus. Versions are for WoW Forever 1.60.1 (Interface 16001).
 
+## 0.5.16
+
+Changes since 0.5.15:
+
+- Updated music in Hillsbrad Foothills: "Southshore Versus Tarren Mill" and "Apothecary Lydon's Experiment" are calmer takes (same titles and file names).
+
 ## 0.5.15
 
 Changes since 0.5.14:
