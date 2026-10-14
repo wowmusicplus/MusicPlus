@@ -1,4 +1,11 @@
---[[ MusicPlus 0.5.16 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+--[[ MusicPlus 0.5.18 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+0.5.18: original city intro music on arrival in Stormwind, Orgrimmar, Thunder Bluff, Darnassus, Ironforge and Undercity (INTROS, by
+FileDataID; option MusicPlusDB.intros, default on; /mplus intro on|off|test). Plays once when the MusicPlus zone really
+changes to the city (not a subzone change, not a /reload or login while already there), at most once per 60 min per
+city (MusicPlusDB.introPlayed[key] = time()), then hands off to PlayIndex(1). Inns keep precedence. Intro FDIDs are in
+no zoneMusic list, so "sound" mode never mutes them.
+0.5.17: all six Tirisfal Glades songs replaced with new takes (same file paths and titles; len
+202.99/178.20/189.96/194.83/183.98/189.12 -> 179.59/179.59/179.76/180.48/179.95/180.02). No code changes.
 0.5.16: Hillsbrad Foothills' "Southshore Versus Tarren Mill" and "Apothecary Lydon's Experiment" replaced with
 calmer takes (same file paths and titles; len 209.71 -> 179.64 and 196.15 -> 180.02). No code changes.
 0.5.15: Thunder Bluff's "Magatha Grimtotem's Dusk" and "Mists of the Pools of Vision" replaced with new takes
@@ -492,7 +499,7 @@ local ZONES = {
             { file = "Undercity\\Requiem for King Terenas.mp3",       len = 188.59, name = "Requiem for King Terenas", display = "Requiem for King Terenas" },
             { file = "Undercity\\The Dark Ladys Candles.mp3",         len = 198.38, name = "The Dark Ladys Candles", display = "The Dark Lady's Candles" },
             { file = "Undercity\\Minuet for Varimathras.mp3",         len = 169.22, name = "Minuet for Varimathras", display = "Minuet for Varimathras" },
-            { file = "Undercity\\Faranells New Plague.mp3",           len = 172.92, name = "Faranells New Plague", display = "Faranell's New Plague" },
+            { file = "Undercity\\Faranells New Plague.mp3",           len = 179.35, name = "Faranells New Plague", display = "Faranell's New Plague" },
             { file = "Undercity\\Free Will of the Forsaken.mp3",      len = 190.03, name = "Free Will of the Forsaken", display = "Free Will of the Forsaken" },
             { file = "Undercity\\Beneath the Ruins of Lordaeron.mp3", len = 169.92, name = "Beneath the Ruins of Lordaeron", display = "Beneath the Ruins of Lordaeron" },
         },
@@ -652,12 +659,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Tirisfal Glades\\Undertaker Mordos Welcome.mp3",  len = 202.99, name = "Undertaker Mordos Welcome", display = "Undertaker Mordo's Welcome" },
-            { file = "Tirisfal Glades\\Toll for Gallows End.mp3",       len = 178.20, name = "Toll for Gallows End", display = "Toll for Gallows' End" },
-            { file = "Tirisfal Glades\\Whitemanes Midnight Prayer.mp3", len = 189.96, name = "Whitemanes Midnight Prayer", display = "Whitemane's Midnight Prayer" },
-            { file = "Tirisfal Glades\\The Agamand Family Crypt.mp3",   len = 194.83, name = "The Agamand Family Crypt", display = "The Agamand Family Crypt" },
-            { file = "Tirisfal Glades\\Marlas Last Wish.mp3",           len = 183.98, name = "Marlas Last Wish", display = "Marla's Last Wish" },
-            { file = "Tirisfal Glades\\KelThuzads Plagued Grain.mp3",   len = 189.12, name = "KelThuzads Plagued Grain", display = "Kel'Thuzad's Plagued Grain" },
+            { file = "Tirisfal Glades\\Undertaker Mordos Welcome.mp3",  len = 179.59, name = "Undertaker Mordos Welcome", display = "Undertaker Mordo's Welcome" },
+            { file = "Tirisfal Glades\\Toll for Gallows End.mp3",       len = 179.59, name = "Toll for Gallows End", display = "Toll for Gallows' End" },
+            { file = "Tirisfal Glades\\Whitemanes Midnight Prayer.mp3", len = 179.76, name = "Whitemanes Midnight Prayer", display = "Whitemane's Midnight Prayer" },
+            { file = "Tirisfal Glades\\The Agamand Family Crypt.mp3",   len = 180.48, name = "The Agamand Family Crypt", display = "The Agamand Family Crypt" },
+            { file = "Tirisfal Glades\\Marlas Last Wish.mp3",           len = 179.95, name = "Marlas Last Wish", display = "Marla's Last Wish" },
+            { file = "Tirisfal Glades\\KelThuzads Plagued Grain.mp3",   len = 180.02, name = "KelThuzads Plagued Grain", display = "Kel'Thuzad's Plagued Grain" },
         },
         -- Gallows' End Tavern is a real subzone (AreaTable 2119) and a named WMO row: kept as the subzone fallback.
         inns = { "Gallows' End Tavern" },
@@ -1155,6 +1162,23 @@ for key, z in pairs(ZONES) do
     end
 end
 
+-- 0.5.18: the game's own city intros (Forever 1.60.1 re-encoded files, sound/music/forever/*intro*.mp3), played
+-- once on arrival. Lengths in whole seconds (no finer measurement available).
+local INTRO_COOLDOWN = 3600 -- seconds per city, same as the game's own intro delay
+local INTROS = {
+    stormwind          = { id = 8180884, len = 68, name = "Stormwind Intro" },   -- mus_c_stormwind_intro_moment.mp3
+    orgrimmar          = { id = 8181039, len = 41, name = "Orgrimmar Intro" },   -- mus_c_orgrimmar_intro_moment.mp3
+    ["thunder-bluff"]  = { id = 8180995, len = 46, name = "Thunder Bluff Intro" }, -- mus_c_thunder_bluff_intro.mp3
+    darnassus          = { id = 8180750, len = 42, name = "Darnassus Intro" },   -- mus_c_darnasssus_intro.mp3
+    ironforge          = { id = 8180963, len = 86, name = "Ironforge Intro" },   -- mus_c_ironforge_intro.mp3 (classic kit 7318, FDID 53191)
+    undercity          = { id = 8181009, len = 29, name = "Undercity Intro" },   -- mus_c_undercity_intro_moment.mp3 (classic kit 6080, FDID 53219)
+}
+for key, t in pairs(INTROS) do
+    if ZONES[key] then
+        ZONES[key].introTrack = { name = t.name, file = t.id, duration = t.len, original = true, intro = true }
+    end
+end
+
 -- 0.5.7: "Leveling Zone Music". The capitals keep their own music whatever the setting; every other zone is a
 -- leveling zone (starting zones included). ALL_LEVELING_CUSTOMS = the custom songs of every leveling zone, in
 -- ZONE_ORDER (shuffled when a rotation is built), the pool used with MusicPlusDB.pool = "all".
@@ -1197,7 +1221,7 @@ local INN_EXIT_EXTRA = 10    -- yards added to a spot's radius: the inn state ho
 local INN_EXIT_OUTDOORS = 5  -- polls in a row outdoors (2.5 s) before the inn state ends
 local INN_EXIT_FAR = 2       -- polls in a row beyond radius + INN_EXIT_EXTRA before the inn state ends
 
-local DB = { enabled = true, mode = "music", bgSound = true, loop = true, titles = false, pool = "zone" } -- replaced by MusicPlusDB on ADDON_LOADED
+local DB = { enabled = true, mode = "music", bgSound = true, loop = true, titles = false, pool = "zone", intros = true } -- replaced by MusicPlusDB on ADDON_LOADED
 
 local S = {
     active = false, testing = false, rotation = nil, pos = 0, track = nil, handle = nil,
@@ -1235,7 +1259,12 @@ local function Debug(msg) if S.debug then Print("|cff999999[debug]|r " .. tostri
 
 -- 0.5.9: "Disable MusicPlus for this zone" (MusicPlusDB.disabledZones[zone title] = true). A disabled zone is treated
 -- as outside the configured zones (see Evaluate / ReadZone / WantedZone).
+-- 0.5.18: Zephras Isle is off by default (MusicPlusDB.disableZephras, default true): Blizzard's scripted music plays
+-- there. Same zone object as always (uiMap 2521/2665 + children, or zone text "Zephras Isle"), so a disabled Zephras
+-- goes through exactly the 0.5.9 per-zone disable path (outside the zones: fade out, game music back).
+local ZEPHRAS_KEY = "zephras-isle"
 local function ZoneDisabled(z)
+    if z ~= nil and z.key == ZEPHRAS_KEY and DB and DB.disableZephras ~= false then return true end
     return z ~= nil and type(DB.disabledZones) == "table" and DB.disabledZones[z.title] == true
 end
 
@@ -1659,6 +1688,7 @@ end
 -- "Original 3/8" / "Custom 2/6" for rotation position i
 local function PosLabel(i)
     if S.testing then return "test" end
+    if S.track and S.track.intro then return "Intro" end -- 0.5.18
     if not (S.rotation and i and i > 0) then return "-" end
     if i <= S.nOrig then return ("Original %d/%d"):format(i, S.nOrig) end
     return ("Custom %d/%d"):format(i - S.nOrig, S.nCustom)
@@ -1673,6 +1703,11 @@ local function Advance(gen, natural)
     if gen ~= S.gen then return end -- stale callback: prevents double-advance
     if S.testing then
         StopCurrent(0); S.testing, S.zone = false, nil; Print("Test finished."); RestoreGameMusic(); RefreshUI()
+        return
+    end
+    if S.track and S.track.intro then -- 0.5.18: intro over (or skipped): straight into the rotation, no gap
+        StopCurrent(300, true)
+        PlayIndex(1)
         return
     end
     if natural and not DB.loop and not S.gap then StartGap(); return end -- Loop music off: silence first
@@ -1856,12 +1891,44 @@ local function WarnIfMusicOff()
     end
 end
 
-local function StartRotation(z)
+---------------------------------------------------------------- 0.5.18: city intros
+local introSession = {} -- fallback when MusicPlusDB isn't a usable table
+local function IntroStore()
+    if type(DB.introPlayed) == "table" then return DB.introPlayed end
+    return introSession
+end
+
+local function IntroReady(z)
+    if not (z and z.introTrack) then return false end
+    local last = tonumber(IntroStore()[z.key]) or tonumber(introSession[z.key])
+    return not last or (time() - last) >= INTRO_COOLDOWN or (time() - last) < 0
+end
+
+-- Play z's intro as the current track (S.pos = 0); Advance hands off to PlayIndex(1). Needs S.zone == z and a
+-- built rotation. Returns true if it started.
+local function PlayIntro(z)
+    local track = z and z.introTrack
+    if not track then return false end
+    ClearGap()
+    local willPlay, handle = PlayTrackFile(track)
+    if not willPlay then Debug("intro could not play: " .. tostring(track.file)) return false end
+    local now = time()
+    introSession[z.key] = now
+    if type(DB.introPlayed) == "table" then DB.introPlayed[z.key] = now end
+    S.pos, S.track, S.handle = 0, track, handle
+    if DB.titles then Print(("Now playing: %s (Intro)"):format(track.name)) end
+    StartTracking(track)
+    RefreshUI()
+    return true
+end
+
+local function StartRotation(z, arrived)
     VolumeSafety("rotation start") -- 0.5.13
     S.active, S.zone = true, z
     WarnIfMusicOff()
-    Debug("starting rotation for " .. z.title)
+    Debug("starting rotation for " .. z.title .. (arrived and " (arrival)" or ""))
     BuildRotation(z)
+    if arrived and DB.intros and IntroReady(z) and PlayIntro(z) then return end -- 0.5.18
     PlayIndex(1)
 end
 
@@ -1999,6 +2066,25 @@ local function Evaluate()
         end
         return
     end
+    -- 0.5.18: arrival detection on the raw MusicPlus zone (ignores inns, subzones; survives /reload via DB.lastZoneKey)
+    do
+        local okR, raw = pcall(FindZone)
+        local rawKey = (okR and raw) and raw.key or false
+        if rawKey ~= DB.lastZoneKey then
+            S.arrivedKey = (DB.lastZoneKey ~= nil and rawKey) or nil -- nil lastZoneKey = first run: no intro
+            DB.lastZoneKey = rawKey
+        end
+        -- 0.5.18: Zephras Isle off by default: one chat line per arrival (login/reload in the zone counts once per session)
+        if rawKey == ZEPHRAS_KEY then
+            if not S.zephrasNoted and DB.enabled and ZoneDisabled(raw) then
+                S.zephrasNoted = true
+                Print("|cff33ccffMusicPlus|r is off in Zephras Isle. Blizzard's own music there is scripted, so we don't " ..
+                    "recommend turning MusicPlus on in this zone. Type /mplus for options.")
+            end
+        elseif okR and (rawKey or (GetZoneText and (GetZoneText() or "") ~= "")) then
+            S.zephrasNoted = false -- really somewhere else (not a blank read): the next arrival gets the line again
+        end
+    end
     local z = DB.enabled and FindZone() or nil
     if z and not S.active and not S.innSpot then
         -- nothing playing yet (login, /reload, arriving): don't start a song just to stop it at the next poll
@@ -2009,18 +2095,21 @@ local function Evaluate()
     if z and InInn(z) then z, inn = nil, true end
     local off = false
     if ZoneDisabled(z) then z, off = nil, true end -- 0.5.9: disabled for this zone = outside the zones
+    if not z and not inn then S.arrivedKey = nil end -- 0.5.18: off / disabled / outside: turning it on later isn't an arrival
     local stopNow = off and force -- 0.5.9: ticked here: fade out at once, like /mplus off
     local delay = SwitchDelay()
     if z then
         if S.pendingStop and S.stopLong then Debug("pending stop cancelled (" .. (z == S.zone and "back" or "now") .. " in " .. z.title .. ")") end
         S.pendingStop = false
         if S.fade then CancelFade("back in " .. z.title) end -- left the inn / came back mid-fade: keep playing
-        if not S.active then S.pendingSwitch = nil; StartRotation(z)
+        local arrived = (S.arrivedKey ~= nil and S.arrivedKey == z.key)
+        if not S.active then S.pendingSwitch = nil; S.arrivedKey = nil; StartRotation(z, arrived)
         elseif z ~= S.zone then -- moved straight into another configured zone: its own rotation
             if S.pendingSwitch == z and (not S.pendingLong or not delay or GetTime() - S.pendingAt >= delay - 0.001) then
                 S.pendingSwitch = nil
                 Debug("zone switch confirmed: " .. z.title)
-                StopCurrent(0, true); MuteZoneMusic(false); StartRotation(z)
+                S.arrivedKey = nil
+                StopCurrent(0, true); MuteZoneMusic(false); StartRotation(z, arrived)
             elseif S.pendingSwitch == z then -- 0.5.3: walking, the delay isn't over yet
                 S.needRestart = restart
                 ScheduleEvaluate(delay - (GetTime() - S.pendingAt))
@@ -2035,6 +2124,7 @@ local function Evaluate()
         else
             if S.pendingSwitch then Debug("pending zone switch to " .. S.pendingSwitch.title .. " cancelled (still in " .. z.title .. "), the song goes on") end
             S.pendingSwitch = nil
+            S.arrivedKey = nil -- 0.5.18: still playing this zone (glitchy read, back over the border): no intro later
             if restart then RestartCurrent("loading screen") end
         end
     elseif S.active then
@@ -2160,7 +2250,13 @@ end
 local function SetZoneDisabled(z, on)
     if not z then return end
     if type(DB.disabledZones) ~= "table" then DB.disabledZones = {} end
-    DB.disabledZones[z.title] = on and true or nil
+    if z.key == ZEPHRAS_KEY then -- 0.5.18: its own setting; the generic per-title entry is never used for it
+        DB.disableZephras = on and true or false
+        DB.disabledZones[z.title] = nil
+        S.zephrasNoted = true -- the player chose: no "is off here" chat line on this visit
+    else
+        DB.disabledZones[z.title] = on and true or nil
+    end
     Debug(z.title .. (on and ": MusicPlus disabled for this zone" or ": MusicPlus enabled again for this zone"))
     if on then
         S.forceStop = true
@@ -2315,10 +2411,15 @@ local function BuildControls(parent, prefix, x, y, opts)
             "if playing) and the game's own music plays here, as if MusicPlus were off, but only in this zone. Other " ..
             "zones aren't affected. Saved per zone. Only for zones MusicPlus plays in. Also /mplus zone off / on.")
         after(c.zone, nil)
+        -- 0.5.18: Zephras Isle help line, shown only while there (RefreshZoneBoxes re-anchors the next control)
+        c.zoneDesc = AddDesc(parent, c.zone, 26, 3, "We don't recommend using MusicPlus in this zone, but if you " ..
+            "really want to, you can uncheck this box.")
+        c.zoneDesc:Hide()
     end
 
     c.bg = CreateFrame("CheckButton", prefix .. "BgSound", parent, "UICheckButtonTemplate")
     place(c.bg)
+    c.parent = parent
     c.bg.Text:SetText("Play music when game is in background")
     c.bg:SetScript("OnClick", OnBgClick)
     Tooltip(c.bg, "Sound in Background", "Sets the game's \"Sound in Background\" option (" .. BG_CVAR ..
@@ -2341,6 +2442,14 @@ local function BuildControls(parent, prefix, x, y, opts)
     Tooltip(c.titles, "Show song titles", "Prints \"Now playing: <song> (Original 3/8)\" in chat at every song change. " ..
         "Off by default. The line below and /mplus status always show the current song.")
     after(c.titles, descs.titles)
+
+    c.intros = CreateFrame("CheckButton", prefix .. "Intros", parent, "UICheckButtonTemplate") -- 0.5.18
+    place(c.intros)
+    c.intros.Text:SetText("Play city intro on arrival")
+    c.intros:SetScript("OnClick", function(self) DB.intros = self:GetChecked() and true or false end)
+    Tooltip(c.intros, "City intro", "On (default): arriving in Stormwind, Orgrimmar, Thunder Bluff or Darnassus plays " ..
+        "the game's original city intro once, then the normal rotation. At most once per hour per city. Also /mplus intro on/off/test.")
+    after(c.intros, descs.intros)
 
     if opts.pool then -- 0.5.7: Leveling Zone Music
         c.poolLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -2401,7 +2510,26 @@ local function RefreshZoneBoxes()
         if c.zone then
             z = z or CurrentZone() or false
             c.zone.zoneObj = z or false -- false, not nil: a nil field would fall through to frame lookups
-            if z then
+            local zeph = z and z.key == ZEPHRAS_KEY
+            if c.zoneDesc and c.zoneDesc:IsShown() ~= (zeph and true or false) then -- 0.5.18: show/collapse the help line
+                c.bg:ClearAllPoints()
+                if zeph then
+                    c.zoneDesc:Show()
+                    c.bg:SetPoint("TOPLEFT", c.zoneDesc, "BOTTOMLEFT", -26, -6)
+                else
+                    c.zoneDesc:Hide()
+                    c.bg:SetPoint("TOPLEFT", c.zone, "BOTTOMLEFT", 0, -2)
+                end
+                if c.parent and c.parent.SetHeight then
+                    c.parent:SetHeight(WIN_H + (zeph and math.ceil((c.zoneDesc:GetStringHeight() or 12) + 8) or 0))
+                end
+            end
+            if zeph then
+                c.zone.Text:SetText("Disable MusicPlus in Zephras Isle")
+                c.zone.Text:SetTextColor(1, 0.82, 0)
+                c.zone:SetEnabled(true)
+                c.zone:SetChecked(ZoneDisabled(z))
+            elseif z then
                 c.zone.Text:SetText("Disable MusicPlus for this zone: " .. z.title)
                 c.zone.Text:SetTextColor(1, 0.82, 0)
                 c.zone:SetEnabled(true)
@@ -2439,6 +2567,7 @@ function RefreshUI()
         c.bg:SetChecked(CVarGet(BG_CVAR) ~= "0")
         c.loop:SetChecked(DB.loop)
         c.titles:SetChecked(DB.titles)
+        c.intros:SetChecked(DB.intros) -- 0.5.18
         if c.pool then c.pool:SetChoice(DB.pool) end -- 0.5.7
         if c.poolDescZone then -- 0.5.9: the selected choice's description brighter
             local a, b = (DB.pool == "all") and 0.55 or 0.95, (DB.pool == "all") and 0.95 or 0.55
@@ -2477,7 +2606,7 @@ end
 --   "Leveling Zone Music" label, dropdown, both descriptions (0.5.9) | Music volume slider |
 --   Skip + song playing now | "/mplus at any time" note | Close (bottom center; "Got it" before 0.5.9). X / Escape / Close close it.
 local function CreateOptionsWindow()
-    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.16")
+    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.18")
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, relPoint, px, py = self:GetPoint()
@@ -2682,6 +2811,8 @@ local function Help()
     Print("/mplus loop [on/off] - Loop music (off = 3-5 min silence between songs)   /mplus titles [on/off] - song titles in chat")
     Print("/mplus pool [zone/all] - Leveling Zone Music: this zone's custom songs only, or all leveling zones' (cities unchanged)")
     Print("/mplus zone [on/off] - MusicPlus on/off for the zone you're in (no argument = show)   /mplus zone clear - all zones on")
+    Print("/mplus zephras [on/off] - MusicPlus in Zephras Isle (off by default: Blizzard's scripted music plays there)")
+    Print("/mplus intro [on/off] - city intro on arrival   /mplus intro test - play this city's intro now (no cooldown)")
     Print("/mplus welcome - open the options window (the welcome screen) again")
 end
 
@@ -2736,6 +2867,24 @@ SlashCmdList["MUSICPLUS"] = function(msg)
         if on == nil then Print("Usage: /mplus titles [on/off]") return end
         SetTitles(on)
         Print("Song titles in chat are now " .. (DB.titles and "ON." or "OFF (the window and /mplus status still show the song)."))
+    elseif cmd == "intro" then -- 0.5.18
+        if rest == "test" then
+            local z = S.active and S.zone or nil
+            if S.testing then Print("Stop the test first (/mplus stop).") return end
+            if not z then Print("Not playing in a MusicPlus zone (inn, disabled or outside the zones).") return end
+            if not z.introTrack then Print(z.title .. " has no city intro.") return end
+            if S.fade then CancelFade("intro test") end
+            StopCurrent(0, true)
+            if not S.rotation then BuildRotation(z) end
+            if PlayIntro(z) then Print("Playing " .. z.introTrack.name .. " (" .. z.introTrack.duration .. " s), then the rotation.")
+            else Print("Could not play the intro."); PlayIndex(1) end
+            return
+        end
+        local on = OnOffArg(rest, DB.intros)
+        if on == nil then Print("Usage: /mplus intro [on/off/test]") return end
+        DB.intros = on
+        Print("City intro on arrival is now " .. (on and "ON." or "OFF."))
+        RefreshUI()
     elseif cmd == "inn" then
         InnCommand(rest)
     elseif cmd == "where" then
@@ -2753,6 +2902,16 @@ SlashCmdList["MUSICPLUS"] = function(msg)
         Print("Leveling Zone Music is now: " .. POOL_LABELS[DB.pool] .. (DB.pool == "all" and
             (" (leveling zones: their own original tracks, then custom songs from all " .. (#ZONE_ORDER - 6) ..
             " leveling zones; cities unchanged).") or " (each zone plays only its own songs)."))
+    elseif cmd == "zephras" then -- 0.5.18: on = MusicPlus plays in Zephras Isle, off = the game's music (default)
+        local z = ZONES[ZEPHRAS_KEY]
+        if rest == "" then
+            Print("Zephras Isle: MusicPlus is " .. (ZoneDisabled(z) and "OFF there (default; /mplus zephras on)." or "on there (/mplus zephras off)."))
+            return
+        end
+        local on = OnOffArg(rest, not ZoneDisabled(z))
+        if on == nil then Print("Usage: /mplus zephras [on/off]") return end
+        SetZoneDisabled(z, not on)
+        Print("Zephras Isle: MusicPlus is now " .. (on and "on there." or "OFF there; Blizzard's own music plays."))
     elseif cmd == "zone" then -- 0.5.9: Disable MusicPlus for this zone
         local z = CurrentZone()
         if rest == "clear" then
@@ -2808,6 +2967,9 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
         if type(DB.titles) ~= "boolean" then DB.titles = false end  -- 0.5.1: song titles in chat, default OFF
         if DB.pool ~= "all" then DB.pool = "zone" end              -- 0.5.7: Leveling Zone Music, default this zone only
         if type(DB.disabledZones) ~= "table" then DB.disabledZones = {} end -- 0.5.9: zone title -> true
+        if type(DB.disableZephras) ~= "boolean" then DB.disableZephras = true end -- 0.5.18: Zephras Isle off by default
+        if type(DB.intros) ~= "boolean" then DB.intros = true end            -- 0.5.18: city intros, default ON
+        if type(DB.introPlayed) ~= "table" then DB.introPlayed = {} end      -- 0.5.18: zone key -> time()
         if type(DB.fadeVolume) == "string" and tonumber(DB.fadeVolume) and tonumber(DB.fadeVolume) > 0 then
             PutVolumeBack(DB.fadeVolume) -- the client stopped mid-fade last time: put the volume back
             Print("Music volume restored to " .. math.floor(tonumber(DB.fadeVolume or CVarGet(VOL_CVAR)) * 100 + 0.5) .. "% (a fade-out was interrupted).")
@@ -2874,4 +3036,4 @@ f:SetScript("OnUpdate", function()
     lastFrame = now
 end)
 
-Print("v0.5.16 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
+Print("v0.5.18 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")

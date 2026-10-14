@@ -2,6 +2,14 @@
 
 All notable changes to MusicPlus. Versions are for WoW Forever 1.60.1 (Interface 16001).
 
+## 0.5.18
+
+Changes since 0.5.16:
+
+- New music in Tirisfal Glades and an updated Undercity song.
+- Capital cities now play their original intro music when you arrive (toggle in /mplus).
+- MusicPlus is now off by default in Zephras Isle, where Blizzard's scripted music plays; you can turn it on in /mplus while in the zone.
+
 ## 0.5.16
 
 Changes since 0.5.15:
