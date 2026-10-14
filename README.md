@@ -7,6 +7,8 @@
 
 > **Get the addon from the [Releases page](https://github.com/wowmusicplus/MusicPlus/releases/latest)**, not the green **Code** button. The Code download is only the source and has **no songs** in it.
 
+Also available on [CurseForge](https://www.curseforge.com/wow/addons/musicplus).
+
 ---
 
 ## What it does
@@ -21,6 +23,7 @@ A few details:
 
 - Every time you enter a zone (login, crossing a border, walking out of an inn) you get a new shuffle, and the song you just heard is never the first one of the next round.
 - Capitals always count as the capital, never as the zone around them (Stormwind is never Elwynn, Ironforge is never Dun Morogh, Undercity is never Tirisfal).
+- Capital cities (Stormwind, Ironforge, Darnassus, Orgrimmar, Thunder Bluff, Undercity) play their original Blizzard city intro once when you arrive, then the rotation starts. It replays at most once an hour and can be turned off in `/mplus`.
 - The songs play on the game's **Music** channel, so the game's own **Music volume** controls how loud they are. Ambience and all other sounds are left alone.
 - When MusicPlus stops (an inn, leaving the supported zones, `/mplus off`), the song **fades out smoothly** and the game's own music comes right back. Your Music volume is always put back exactly as it was.
 
@@ -35,6 +38,8 @@ A few details:
 | Leveling zones (10–45) | Westfall (4), Loch Modan (3), Darkshore (4), Silverpine Forest (6), The Barrens (6), Redridge Mountains (3), Stonetalon Mountains (6), Duskwood (6), Ashenvale (5), Wetlands (5), Hillsbrad Foothills (3), Stranglethorn Vale (6) |
 
 Zones that share music in the game share the same originals. For example, Elwynn, Loch Modan, Redridge and Hillsbrad all use the Forest tracks. Zephras Isle counts as one zone: all of the isle's music (Valanaar included) is played as its originals.
+
+**Zephras Isle is off by default** because Blizzard's scripted music plays there. You can turn MusicPlus on there in `/mplus` while in the zone (or with `/mplus zephras on`).
 
 ---
 
@@ -62,9 +67,11 @@ Type **`/mplus`** to open the MusicPlus window, which holds all the options. Dra
 |---|---|---|
 | Enable MusicPlus | On | Turns the addon on or off. |
 | Disable MusicPlus for this zone: *zone* | Off | Shows the zone you're in. **Ticked:** MusicPlus stays quiet in that zone only and the game's own music plays there; other zones aren't affected. Saved per zone, so it stays off until you untick it there. Greyed out outside the MusicPlus zones. Same as `/mplus zone off` / `on`. |
+| Disable MusicPlus in Zephras Isle | **On (ticked)** | Shown only while you're in Zephras Isle. Untick to let MusicPlus play there (not recommended, since Blizzard's scripted music plays there). |
 | Loop music | **On** | Songs play back to back. **Off:** after each song there's a random 3–5 minutes of silence before the next one, like the game's own music with its Loop Music option off. Nothing plays during the silence, including the game's zone music. |
 | Show song titles in chat | **Off** | **On:** prints `Now playing: <song> (Original 3/8)` in chat at every song change. The window and `/mplus status` always show the current song either way. |
 | Play music when game is in background | **On** | The game's "Sound in Background" setting, so alt-tabbing doesn't interrupt the music. If you turn it off, MusicPlus remembers that. |
+| Play city intro on arrival | **On** | Plays the capital's original intro music when you arrive (at most once an hour per city), then the rotation. |
 | Leveling Zone Music | **For this zone only** | **For this zone only:** each zone plays its own songs. **Play music from all zones:** in the 19 starting and leveling zones, the zone's own original tracks play first, then the custom songs from all 19 of those zones (114 songs), shuffled. Capital cities always play only their own songs. |
 | Music volume slider | – | The same as the game's Music volume. |
 
@@ -91,6 +98,8 @@ Use `/mplus` or `/musicplus`.
 | `/mplus titles [on/off]` | Song titles in chat on or off (no argument toggles it) |
 | `/mplus zone [on/off]` | Turn MusicPlus off / on for the zone you're in only (no argument shows this zone's setting and the disabled zones); `/mplus zone clear` turns every zone back on |
 | `/mplus pool [zone/all]` | Leveling Zone Music: `zone` = this zone's songs only, `all` = songs from all leveling zones (no argument shows the current choice) |
+| `/mplus intro [on/off/test]` | City intro on arrival on or off; `test` plays this city's intro now |
+| `/mplus zephras [on/off]` | MusicPlus on or off in Zephras Isle (no argument shows the setting) |
 | `/mplus bgsound` | Toggle "Sound in Background" |
 | `/mplus welcome` | Open the MusicPlus window (same as `/mplus`) |
 | `/mplus test` / `/mplus stop` | Play a custom song anywhere, as a sound check / stop the test |
@@ -153,7 +162,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the version history.
 
 ## Music credits
 
-- **Custom songs:** the 150 custom songs (6 per zone) were created by the author with [Suno](https://suno.com) on a Pro plan, which includes commercial rights.
+- **Custom songs:** the 150 custom songs (6 per zone) were created by the author with [Suno](https://suno.com) on a Premier plan, which includes commercial rights.
 - **Original Warcraft music:** the original zone music is © Blizzard Entertainment. MusicPlus plays it from your own game client; none of it is included in this repository or the release zip.
 
 ## License
