@@ -1,4 +1,8 @@
---[[ MusicPlus 0.5.18 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+--[[ MusicPlus 0.5.19 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+0.5.19: new custom songs for Durotar and The Barrens: all six of each zone replaced (data only: the customs
+entries of those 2 zones, new titles, file names and ffprobe lengths; the old MP3s are no longer in those folders). No code changes.
+  Durotar: Razor Hill Watchfires 182.71, Valley of Trials Dust 194.42, Burning Blade Coven 179.78, Drygulch Ravine Shadows 179.83, Thunder Ridge Storm 181.20, Skull Rock Embers 189.00.
+  The Barrens: Lushwater Oasis Night 182.04, Bael Modan Excavation 199.10, Kolkar Centaur Raiders 179.78, Razorfen Thorn Rites 199.63, Northwatch Hold Siege Smoke 188.83, Dreadmist Peak Omen 194.42.
 0.5.18: original city intro music on arrival in Stormwind, Orgrimmar, Thunder Bluff, Darnassus, Ironforge and Undercity (INTROS, by
 FileDataID; option MusicPlusDB.intros, default on; /mplus intro on|off|test). Plays once when the MusicPlus zone really
 changes to the city (not a subzone change, not a /reload or login while already there), at most once per 60 min per
@@ -593,12 +597,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Durotar\\The Land Named for Durotan.mp3",  len = 179.83, name = "The Land Named for Durotan", display = "The Land Named for Durotan" },
-            { file = "Durotar\\Your Place in the World.mp3",     len = 178.80, name = "Your Place in the World", display = "Your Place in the World" },
-            { file = "Durotar\\Burning Blade at Skull Rock.mp3", len = 180.02, name = "Burning Blade at Skull Rock", display = "Burning Blade at Skull Rock" },
-            { file = "Durotar\\GarThok Stands Watch.mp3",        len = 179.45, name = "GarThok Stands Watch", display = "Gar'Thok Stands Watch" },
-            { file = "Durotar\\Zalazanes Echo Isles.mp3",        len = 179.95, name = "Zalazanes Echo Isles", display = "Zalazane's Echo Isles" },
-            { file = "Durotar\\Proudmoores Fallen Fleet.mp3",    len = 179.42, name = "Proudmoores Fallen Fleet", display = "Proudmoore's Fallen Fleet" },
+            { file = "Durotar\\Razor Hill Watchfires.mp3",   len = 182.71, name = "Razor Hill Watchfires", display = "Razor Hill Watchfires" },
+            { file = "Durotar\\Valley of Trials Dust.mp3",   len = 194.42, name = "Valley of Trials Dust", display = "Valley of Trials Dust" },
+            { file = "Durotar\\Burning Blade Coven.mp3",     len = 179.78, name = "Burning Blade Coven", display = "Burning Blade Coven" },
+            { file = "Durotar\\Drygulch Ravine Shadows.mp3", len = 179.83, name = "Drygulch Ravine Shadows", display = "Drygulch Ravine Shadows" },
+            { file = "Durotar\\Thunder Ridge Storm.mp3",     len = 181.20, name = "Thunder Ridge Storm", display = "Thunder Ridge Storm" },
+            { file = "Durotar\\Skull Rock Embers.mp3",       len = 189.00, name = "Skull Rock Embers", display = "Skull Rock Embers" },
         },
         -- Razor Hill inn (orcinn WMO 1849) has no tavern music. Sen'jin Village itself (area 367) plays Zone-TavernHorde outdoors
         -- too; that is a village, not a building, so only the hut is a spot (add "Sen'jin Village" to inns to go quiet in the whole village).
@@ -802,12 +806,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "The Barrens\\Searching for Mankriks Wife.mp3", len = 223.20, name = "Searching for Mankriks Wife", display = "Searching for Mankrik's Wife" },
-            { file = "The Barrens\\Baron Longshores Bounty.mp3",     len = 194.83, name = "Baron Longshores Bounty", display = "Baron Longshore's Bounty" },
-            { file = "The Barrens\\Naralexs Nightmare.mp3",          len = 202.82, name = "Naralexs Nightmare", display = "Naralex's Nightmare" },
-            { file = "The Barrens\\The Forgotten Pools.mp3",         len = 194.90, name = "The Forgotten Pools", display = "The Forgotten Pools" },
-            { file = "The Barrens\\Echeyakees Night Prowl.mp3",      len = 208.03, name = "Echeyakees Night Prowl", display = "Echeyakee's Night Prowl" },
-            { file = "The Barrens\\Mangletooths Blood Shards.mp3",   len = 203.23, name = "Mangletooths Blood Shards", display = "Mangletooth's Blood Shards" },
+            { file = "The Barrens\\Lushwater Oasis Night.mp3",       len = 182.04, name = "Lushwater Oasis Night", display = "Lushwater Oasis Night" },
+            { file = "The Barrens\\Bael Modan Excavation.mp3",       len = 199.10, name = "Bael Modan Excavation", display = "Bael Modan Excavation" },
+            { file = "The Barrens\\Kolkar Centaur Raiders.mp3",      len = 179.78, name = "Kolkar Centaur Raiders", display = "Kolkar Centaur Raiders" },
+            { file = "The Barrens\\Razorfen Thorn Rites.mp3",        len = 199.63, name = "Razorfen Thorn Rites", display = "Razorfen Thorn Rites" },
+            { file = "The Barrens\\Northwatch Hold Siege Smoke.mp3", len = 188.83, name = "Northwatch Hold Siege Smoke", display = "Northwatch Hold Siege Smoke" },
+            { file = "The Barrens\\Dreadmist Peak Omen.mp3",         len = 194.42, name = "Dreadmist Peak Omen", display = "Dreadmist Peak Omen" },
         },
         -- No tavern music at the Crossroads (orcinn WMO 1849) or Camp Taurajo (longhouse WMO 704). Ratchet stays in the Barrens.
         inns = {},
@@ -2447,7 +2451,7 @@ local function BuildControls(parent, prefix, x, y, opts)
     place(c.intros)
     c.intros.Text:SetText("Play city intro on arrival")
     c.intros:SetScript("OnClick", function(self) DB.intros = self:GetChecked() and true or false end)
-    Tooltip(c.intros, "City intro", "On (default): arriving in Stormwind, Orgrimmar, Thunder Bluff or Darnassus plays " ..
+    Tooltip(c.intros, "City intro", "On (default): arriving in Stormwind, Ironforge, Darnassus, Orgrimmar, Thunder Bluff and Undercity plays " ..
         "the game's original city intro once, then the normal rotation. At most once per hour per city. Also /mplus intro on/off/test.")
     after(c.intros, descs.intros)
 
@@ -2606,7 +2610,7 @@ end
 --   "Leveling Zone Music" label, dropdown, both descriptions (0.5.9) | Music volume slider |
 --   Skip + song playing now | "/mplus at any time" note | Close (bottom center; "Got it" before 0.5.9). X / Escape / Close close it.
 local function CreateOptionsWindow()
-    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.18")
+    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.19")
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, relPoint, px, py = self:GetPoint()
@@ -3036,4 +3040,4 @@ f:SetScript("OnUpdate", function()
     lastFrame = now
 end)
 
-Print("v0.5.18 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
+Print("v0.5.19 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")

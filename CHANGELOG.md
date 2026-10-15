@@ -2,6 +2,13 @@
 
 All notable changes to MusicPlus. Versions are for WoW Forever 1.60.1 (Interface 16001).
 
+## 0.5.19
+
+Changes since 0.5.18:
+
+- Darker new music for Durotar and The Barrens (6 songs each).
+- City intro tooltip now lists all six capitals.
+
 ## 0.5.18
 
 Changes since 0.5.16:
