@@ -1,4 +1,19 @@
---[[ MusicPlus 0.5.19 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+--[[ MusicPlus 0.6.0 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+0.6.0: "Song Selection Mode" under Leveling Zone Music (window dropdown, /mplus songs classic|only; MusicPlusDB.songMode,
+default 1). 1 = "Classic Tracks and MusicPlus" = exactly 0.5.19. 2 = "MusicPlus Tracks Only": every zone's rotation, the
+capitals' too, has no original (Blizzard) tracks, only its custom songs (leveling zones with Leveling Zone Music = "all":
+the all-zones customs pool; a capital: its own). A city intro still plays once on arrival if "Play city intro on
+arrival" is on, then the customs-only rotation. Inns, Zephras Isle's default-off, the pool and the rest are unchanged.
+A change mid-rotation keeps the current song; "Only" drops the originals not played yet this round, "Classic" adds
+this zone's originals next if the round is still in its originals part, else the next song starts a new round.
+0.6.0 also: optional now-playing widget (MusicPlusDB.widget, default off; .widgetLock; .widgetPos): a small movable
+bar (song title, Previous / Replay / Skip), /mplus widget on|off|lock|unlock|reset|scale; .widgetScale (Widget Size). Previous uses a short history
+(S.history, last 10 songs of this zone): a song of the current round is played again at its place (the rotation goes
+on from there); an older one (earlier round, intro) plays once, then the song that was on starts again. /mplus prev.
+0.6.0 also: the /mplus window has pages (570 x 640): a header (Welcome to MusicPlus + intro, Now Playing + Skip) and General /
+Music / Widget pages chosen in a HealBot-style left navigation column (gold text rows, highlighted selection).
+Checkboxes have their full grey description again (0.5.15 wording), plus a tooltip. Last page in MusicPlusDB.optTab.
+The Settings > AddOns panel is unchanged (BuildControls without opts).
 0.5.19: new custom songs for Durotar and The Barrens: all six of each zone replaced (data only: the customs
 entries of those 2 zones, new titles, file names and ffprobe lengths; the old MP3s are no longer in those folders). No code changes.
   Durotar: Razor Hill Watchfires 182.71, Valley of Trials Dust 194.42, Burning Blade Coven 179.78, Drygulch Ravine Shadows 179.83, Thunder Ridge Storm 181.20, Skull Rock Embers 189.00.
@@ -1189,6 +1204,12 @@ end
 local CAPITALS = { stormwind = true, ironforge = true, darnassus = true, orgrimmar = true, ["thunder-bluff"] = true, undercity = true }
 local POOL_VALUES = { "zone", "all" }
 local POOL_LABELS = { zone = "For this zone only", all = "Play music from all zones" }
+-- 0.6.0: Song Selection Mode (MusicPlusDB.songMode): 1 = originals + customs (default, as before), 2 = customs only.
+-- Every zone, capitals included (their intros are separate: DB.intros).
+local SONGMODE_VALUES = { 1, 2 }
+local SONGMODE_LABELS = { [1] = "Classic Tracks and MusicPlus", [2] = "MusicPlus Tracks Only" }
+local SONGMODE_TIP = "Classic Tracks and MusicPlus: Plays classic tracks first, then MusicPlus tracks. " ..
+    "MusicPlus Tracks Only: plays only MusicPlus songs (city intros still play if enabled)."
 local ALL_LEVELING_CUSTOMS = {}
 for _, key in ipairs(ZONE_ORDER) do
     local z = ZONES[key]
@@ -1225,7 +1246,7 @@ local INN_EXIT_EXTRA = 10    -- yards added to a spot's radius: the inn state ho
 local INN_EXIT_OUTDOORS = 5  -- polls in a row outdoors (2.5 s) before the inn state ends
 local INN_EXIT_FAR = 2       -- polls in a row beyond radius + INN_EXIT_EXTRA before the inn state ends
 
-local DB = { enabled = true, mode = "music", bgSound = true, loop = true, titles = false, pool = "zone", intros = true } -- replaced by MusicPlusDB on ADDON_LOADED
+local DB = { enabled = true, mode = "music", bgSound = true, loop = true, titles = false, pool = "zone", intros = true, songMode = 1 } -- replaced by MusicPlusDB on ADDON_LOADED
 
 local S = {
     active = false, testing = false, rotation = nil, pos = 0, track = nil, handle = nil,
@@ -1246,6 +1267,8 @@ local S = {
     promptUntil = 0,              -- GetTime() until which zone changes use the prompt confirmation (loading screen, landing)
     pendingAt = 0, pendingLong = false, -- pending switch (S.pendingSwitch): first reading, walking delay (vs. prompt)
     stopAt = 0, stopLong = false,       -- pending stop (S.pendingStop): the same
+    -- 0.6.0: Previous (widget, /mplus prev): history of played songs, the current/last one, a one-off replay
+    history = {}, cur = nil, round = 0, extra = false, extraLabel = nil,
 }
 local RefreshUI -- defined in the options section
 local RefreshNowLabel -- defined in the options section (0.5.1)
@@ -1258,6 +1281,12 @@ local function Print(msg) DEFAULT_CHAT_FRAME:AddMessage(PREFIX .. tostring(msg))
 local function CustomPool(z)
     if DB.pool == "all" and not z.city then return ALL_LEVELING_CUSTOMS end
     return z.customTracks
+end
+-- 0.6.0: the original (Blizzard) tracks of zone z's rotation: none with Song Selection Mode 2, capitals included
+-- (unless the zone had no custom songs at all, so a rotation is never empty). City intros aren't part of it.
+local function OrigPool(z)
+    if DB.songMode == 2 and #CustomPool(z) > 0 then return {} end
+    return z.origTracks
 end
 local function Debug(msg) if S.debug then Print("|cff999999[debug]|r " .. tostring(msg)) end end
 
@@ -1677,7 +1706,7 @@ end
 -- All originals (shuffled), then all customs (shuffled). The song that played last (loop boundary or
 -- re-entry) is never first: if the shuffle puts it there, it's swapped with another song of its group.
 local function BuildRotation(z)
-    local orig, cust = Shuffled(z.origTracks), Shuffled(CustomPool(z)) -- 0.5.7: the customs pool (setting)
+    local orig, cust = Shuffled(OrigPool(z)), Shuffled(CustomPool(z)) -- 0.5.7: the customs pool; 0.6.0: OrigPool (song mode)
     local first = (#orig > 0) and orig or cust
     if #first > 1 and first[1].file == S.lastFile then
         local j = math.random(2, #first)
@@ -1687,12 +1716,17 @@ local function BuildRotation(z)
     for _, t in ipairs(orig) do r[#r + 1] = t end
     for _, t in ipairs(cust) do r[#r + 1] = t end
     S.rotation, S.pos, S.nOrig, S.nCustom = r, 0, #orig, #cust
+    S.round = (S.round or 0) + 1 -- 0.6.0: history entries of an older round aren't positions in this one
 end
 
 -- "Original 3/8" / "Custom 2/6" for rotation position i
-local function PosLabel(i)
+-- 0.6.0: plain = the rotation position only (no test / intro / one-off override)
+local function PosLabel(i, plain)
     if S.testing then return "test" end
-    if S.track and S.track.intro then return "Intro" end -- 0.5.18
+    if not plain then
+        if S.extra and S.track then return S.extraLabel or "Previous" end -- 0.6.0: one-off replay (Previous)
+        if S.track and S.track.intro then return "Intro" end -- 0.5.18
+    end
     if not (S.rotation and i and i > 0) then return "-" end
     if i <= S.nOrig then return ("Original %d/%d"):format(i, S.nOrig) end
     return ("Custom %d/%d"):format(i - S.nOrig, S.nCustom)
@@ -1709,12 +1743,18 @@ local function Advance(gen, natural)
         StopCurrent(0); S.testing, S.zone = false, nil; Print("Test finished."); RestoreGameMusic(); RefreshUI()
         return
     end
-    if S.track and S.track.intro then -- 0.5.18: intro over (or skipped): straight into the rotation, no gap
+    if S.track and S.track.intro and not S.extra then -- 0.5.18: intro over (or skipped): straight into the rotation, no gap
         StopCurrent(300, true)
         PlayIndex(1)
         return
     end
     if natural and not DB.loop and not S.gap then StartGap(); return end -- Loop music off: silence first
+    if S.extra then -- 0.6.0: a one-off (Previous) is over: the song that was on when Previous was pressed, from its start
+        S.extra = false
+        StopCurrent(300, true)
+        PlayIndex(math.max(1, S.pos))
+        return
+    end
     StopCurrent(300, true)
     PlayIndex(S.pos + 1)
 end
@@ -1739,8 +1779,9 @@ end
 -- "Original 3/8" / "Custom 1/6" of the track that follows the silence (a new round starts with its first song)
 local function NextPosLabel()
     if not S.rotation then return "-" end
+    if S.extra then return PosLabel(math.max(1, S.pos), true) end -- 0.6.0: after a one-off, the interrupted song again
     if S.pos + 1 <= #S.rotation then return PosLabel(S.pos + 1) end
-    local nO = S.zone and #S.zone.origTracks or 0
+    local nO = S.zone and #OrigPool(S.zone) or 0 -- 0.6.0
     if nO > 0 then return ("Original 1/%d"):format(nO) end
     return ("Custom 1/%d"):format(S.zone and #CustomPool(S.zone) or 0)
 end
@@ -1864,7 +1905,18 @@ local function ResumeHint(why)
     end
 end
 
-function PlayIndex(i, failures)
+-- 0.6.0: a song started: the one before it goes into the history (unless noPush: Previous itself), S.cur = this one
+local HISTORY_MAX = 10
+local function NoteStarted(track, pos, noPush)
+    if S.cur and not noPush then
+        local h = S.history
+        h[#h + 1] = S.cur
+        if #h > HISTORY_MAX then table.remove(h, 1) end
+    end
+    S.cur = { track = track, pos = pos, round = S.round, zone = S.zone, label = PosLabel(pos) }
+end
+
+function PlayIndex(i, failures, noPush)
     failures = failures or 0
     if not S.zone then return end
     if not S.rotation or i > #S.rotation then BuildRotation(S.zone); i = 1 end
@@ -1879,9 +1931,11 @@ function PlayIndex(i, failures)
     local willPlay, handle = PlayTrackFile(track)
     if not willPlay then
         Print("Debug: could not play " .. track.name .. " (" .. tostring(track.file) .. "), skipping.")
-        return PlayIndex(i + 1, failures + 1)
+        return PlayIndex(i + 1, failures + 1, noPush)
     end
     S.track, S.handle, S.lastFile = track, handle, track.file
+    S.extra, S.extraLabel = false, nil -- 0.6.0
+    NoteStarted(track, i, noPush)      -- 0.6.0
     if DB.titles then Print(("Now playing: %s (%s)"):format(track.name, PosLabel(i))) end -- 0.5.1: "Show song titles"
     StartTracking(track)
     RefreshUI()
@@ -1920,6 +1974,8 @@ local function PlayIntro(z)
     introSession[z.key] = now
     if type(DB.introPlayed) == "table" then DB.introPlayed[z.key] = now end
     S.pos, S.track, S.handle = 0, track, handle
+    S.extra, S.extraLabel = false, nil -- 0.6.0
+    NoteStarted(track, 0)              -- 0.6.0
     if DB.titles then Print(("Now playing: %s (Intro)"):format(track.name)) end
     StartTracking(track)
     RefreshUI()
@@ -1936,12 +1992,62 @@ local function StartRotation(z, arrived)
     PlayIndex(1)
 end
 
+---------------------------------------------------------------- 0.6.0: Previous / Replay (widget, /mplus prev)
+-- A one-off: entry e's song plays once (S.extra); S.pos stays on the song that was on, which Advance starts again after.
+local function PlayExtra(e)
+    ClearGap()
+    local willPlay, handle = PlayTrackFile(e.track)
+    if not willPlay then Debug("previous could not play: " .. tostring(e.track.file)); PlayIndex(math.max(1, S.pos)) return end
+    S.track, S.handle, S.lastFile = e.track, handle, e.track.file
+    S.extra, S.extraLabel = true, e.label
+    S.cur = e -- no history push: going back
+    if DB.titles then Print(("Now playing: %s (%s)"):format(e.track.name, PosLabel(S.pos))) end
+    StartTracking(e.track)
+    RefreshUI()
+end
+
+-- Previous: during a silence, the song that just ended; else the newest history entry of this zone. A song of the
+-- current round plays at its own place (the rotation goes on from there); anything else is a one-off. No history:
+-- the current song starts again. Returns what it did ("previous", "restart" or nil = not playing).
+local function PlayPrevious()
+    if not S.active or S.testing or not S.zone then return nil end
+    local e
+    if not S.track then
+        if S.cur and S.cur.zone == S.zone then e = S.cur end
+    else
+        while #S.history > 0 do
+            local h = table.remove(S.history)
+            if h.zone == S.zone then e = h break end
+        end
+    end
+    if not e then
+        if S.track then RestartCurrent("/mplus replay") return "restart" end
+        return nil
+    end
+    StopCurrent(300, true)
+    if e.round == S.round and e.pos >= 1 and S.rotation and S.rotation[e.pos] == e.track and e.pos <= math.max(S.pos, 1) then
+        PlayIndex(e.pos, 0, true)
+    else
+        PlayExtra(e)
+    end
+    return "previous"
+end
+
+-- Replay: the current song from its start; during a silence, the song that just ended (as Previous).
+local function ReplayCurrent()
+    if not S.active or S.testing then return nil end
+    if S.track then RestartCurrent("/mplus replay") return "restart" end
+    if S.gap then return PlayPrevious() end
+    return nil
+end
+
 -- restore = bring the game's own music back right away (inn, leaving the zones, /mplus off)
 local function StopRotation(fadeMs, restore)
     if S.fade and not S.fade.finishing then CancelFade("stopped") end
     local wasPlaying = S.active or S.track ~= nil
     S.active = false
     StopCurrent(fadeMs)
+    S.extra, S.extraLabel = false, nil -- 0.6.0 (the history stays: zone-checked when used)
     if restore and wasPlaying then RestoreGameMusic() end
     S.rotation, S.pos, S.zone, S.pendingSwitch = nil, 0, nil, nil
     RefreshUI()
@@ -2082,8 +2188,8 @@ local function Evaluate()
         if rawKey == ZEPHRAS_KEY then
             if not S.zephrasNoted and DB.enabled and ZoneDisabled(raw) then
                 S.zephrasNoted = true
-                Print("|cff33ccffMusicPlus|r is off in Zephras Isle. Blizzard's own music there is scripted, so we don't " ..
-                    "recommend turning MusicPlus on in this zone. Type /mplus for options.")
+                Print("|cff33ccffMusicPlus|r is off by default in Zephras Isle: Blizzard gave Zephras Isle its own scripted " ..
+                    "soundtrack. Type /mplus to use MusicPlus here anyway (not recommended).")
             end
         elseif okR and (rawKey or (GetZoneText and (GetZoneText() or "") ~= "")) then
             S.zephrasNoted = false -- really somewhere else (not a blank read): the next arrival gets the line again
@@ -2203,6 +2309,7 @@ local function StartTest()
     if S.active then StopRotation(0) end
     StopCurrent(0)
     S.testing = true
+    S.extra, S.extraLabel = false, nil -- 0.6.0
     WarnIfMusicOff()
     local z = ZONES[ZONE_ORDER[1]]
     local track = z.customTracks[1] or z.origTracks[1]
@@ -2313,6 +2420,47 @@ local function SetPool(value)
     RefreshUI()
 end
 
+-- 0.6.0: Song Selection Mode changed while a zone's rotation runs (capitals too; during a city intro S.pos = 0). Like RebuildPool, the song (or silence)
+-- that's on goes on untouched; only what hasn't played yet is redone, so the change shows from the next song:
+--   2 (Only): the originals not played yet this round are dropped (in the originals part: the customs come next).
+--   1 (Classic): still in the originals part (or nothing played yet): this zone's originals not played yet this
+--     round are added right after the current song (shuffled), then the customs as they were. Already in the
+--     customs: the round ends with the current song, so the next one starts a new round (originals first).
+local function RebuildSongMode()
+    local r, z = S.rotation, S.zone
+    local pos = math.min(S.pos, #r)
+    if DB.songMode == 2 then
+        if pos < S.nOrig then
+            local newR = {}
+            for i = 1, pos do newR[i] = r[i] end
+            for i = S.nOrig + 1, #r do newR[#newR + 1] = r[i] end
+            S.rotation, S.nOrig = newR, pos
+        end
+    elseif pos <= S.nOrig then
+        local done = {}
+        for i = 1, pos do done[r[i].file] = true end
+        local add = {}
+        for _, t in ipairs(OrigPool(z)) do if not done[t.file] then add[#add + 1] = t end end
+        local newR = {}
+        for i = 1, pos do newR[i] = r[i] end
+        for _, t in ipairs(Shuffled(add)) do newR[#newR + 1] = t end
+        for i = S.nOrig + 1, #r do newR[#newR + 1] = r[i] end
+        S.rotation, S.nOrig = newR, pos + #add
+    else
+        for i = #r, pos + 1, -1 do r[i] = nil end -- PlayIndex(pos + 1) then builds a new round (BuildRotation)
+    end
+    Debug(("song mode for %s: %s; %d original(s) this round, %d song(s) left"):format(z.title,
+        SONGMODE_LABELS[DB.songMode], S.nOrig, #S.rotation - S.pos))
+end
+
+local function SetSongMode(value)
+    value = (tonumber(value) == 2) and 2 or 1
+    local changed = DB.songMode ~= value
+    DB.songMode = value
+    if changed and S.active and not S.testing and S.zone and S.rotation then RebuildSongMode() end
+    RefreshUI()
+end
+
 ---------------------------------------------------------------- options UI
 -- Templates (all verified in the Forever 1.60.1 UI source): BasicFrameTemplateWithInset (TitleText,
 -- CloseButton), UICheckButtonTemplate (.Text), UISliderTemplateWithLabels (.Text/.Low/.High),
@@ -2321,7 +2469,17 @@ end
 -- family). The window is in UISpecialFrames so Escape closes it.
 -- 0.5.7: the 0.5.2 welcome window and the options window are one window, MusicPlusOptionsFrame.
 local controlSets, optionsFrame = {}, nil
-local WIN_W, WIN_H = 440, 680 -- 0.5.9: the merged window, taller for the zone checkbox and the 2nd pool description
+local SetWidgetShown, SetWidgetLock, SetWidgetScale -- 0.6.0: defined with the widget below
+local WIN_W, WIN_H = 570, 640 -- 0.6.0: header + left navigation column + content panel (it was one long page, 886 px)
+local DESC_W = 370             -- width of a grey description / the zone label (fits the ~412 px content page)
+-- 0.6.0: a window taller than the screen (UI scale, Zephras help line) is scaled down to fit; never scaled up
+local function FitToScreen(f)
+    if not (f and f.SetScale and f.GetHeight and UIParent and UIParent.GetHeight) then return end
+    local sh, h = UIParent:GetHeight(), f:GetHeight()
+    if type(sh) ~= "number" or type(h) ~= "number" or sh <= 0 or h <= 0 then return end
+    local need = h + 16
+    f:SetScale(need > sh and (sh / need) or 1)
+end
 
 -- Background sound checkbox (window and Settings panel): set the CVar, then show it everywhere (0.5.2: RefreshUI added)
 local function OnBgClick(self)
@@ -2343,11 +2501,44 @@ end
 local function AddDesc(parent, anchor, dx, dy, text)
     local d = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     d:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", dx, dy)
-    d:SetWidth(WIN_W - 70)
+    d:SetWidth(DESC_W)
     d:SetJustifyH("LEFT")
     d:SetTextColor(0.75, 0.75, 0.75)
     d:SetText(text)
     return d
+end
+
+-- 0.6.0 fix: a 220 x 17 slider with Text / Low / High. Forever's UISliderTemplate (Mainline SharedXML) has no
+-- <Size> (Classic's was 144 x 17; only OptionsSliderTemplate adds it there), and a slider given only a width has no
+-- height: its rect never resolves, so it and everything anchored to it is never drawn. The size is now set in full.
+-- If the slider can't be created at all, a same-sized empty placeholder (.failed) keeps the layout and a one-time
+-- chat line says so.
+local function MakeSlider(parent, name, what, minV, maxV, step)
+    local ok, sl = pcall(CreateFrame, "Slider", name, parent, "UISliderTemplateWithLabels")
+    if not (ok and sl) then ok, sl = pcall(CreateFrame, "Slider", name, parent, "OptionsSliderTemplate") end
+    if ok and sl then
+        ok = pcall(function()
+            sl:SetSize(220, 17)
+            sl:SetOrientation("HORIZONTAL")
+            sl:SetMinMaxValues(minV, maxV)
+            sl:SetValueStep(step)
+            if sl.SetObeyStepOnDrag then sl:SetObeyStepOnDrag(true) end
+            for _, k in ipairs({ "Text", "Low", "High" }) do
+                if not sl[k] then sl[k] = sl:CreateFontString(nil, "ARTWORK", k == "Text" and "GameFontHighlight" or "GameFontHighlightSmall") end
+            end
+        end)
+        if ok then return sl end
+        if sl.Hide then sl:Hide() end
+    end
+    if not S.sliderErrShown then
+        S.sliderErrShown = true
+        Print("|cffff4040Couldn't create the " .. what .. " slider|r (" .. tostring(sl) .. "). The rest of the window works; " ..
+            "please report this.")
+    end
+    local ph = CreateFrame("Frame", nil, parent) -- keeps the layout below it
+    ph:SetSize(220, 17)
+    ph.failed = true
+    return ph
 end
 
 -- 0.5.7: the Leveling Zone Music dropdown (Classic-era UIDropDownMenu API). If that API were missing, a plain button
@@ -2377,6 +2568,40 @@ local function BuildPoolDropDown(parent, name)
     return b, 0
 end
 
+-- 0.6.0: the Song Selection Mode dropdown, built the same way (same fallback button if the API were missing)
+local function SongModeMenu(_, level)
+    for _, v in ipairs(SONGMODE_VALUES) do
+        local info = UIDropDownMenu_CreateInfo()
+        info.text, info.value = SONGMODE_LABELS[v], v
+        info.checked = (DB.songMode == v)
+        info.func = function() SetSongMode(v); if CloseDropDownMenus then CloseDropDownMenus() end end
+        UIDropDownMenu_AddButton(info, level)
+    end
+end
+
+local function BuildSongModeDropDown(parent, name)
+    if UIDropDownMenu_Initialize and UIDropDownMenu_CreateInfo and UIDropDownMenu_AddButton and UIDropDownMenu_SetText then
+        local dd = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
+        if UIDropDownMenu_SetWidth then UIDropDownMenu_SetWidth(dd, 200) end
+        UIDropDownMenu_Initialize(dd, SongModeMenu)
+        dd.SetChoice = function(self, v) UIDropDownMenu_SetText(self, SONGMODE_LABELS[v] or SONGMODE_LABELS[1]) end
+        -- tooltip: on the dropdown itself (the template's arrow button passes OnEnter/OnLeave on to it); only if
+        -- the arrow button has no OnEnter of its own, it gets the tooltip too
+        if dd.EnableMouse then dd:EnableMouse(true) end
+        Tooltip(dd, "Song Selection Mode", SONGMODE_TIP)
+        local arrow = dd.Button or _G[name .. "Button"]
+        if arrow and arrow.GetScript and not arrow:GetScript("OnEnter") then Tooltip(arrow, "Song Selection Mode", SONGMODE_TIP) end
+        return dd, -16
+    end
+    local b = CreateFrame("Button", name, parent, "UIPanelButtonTemplate")
+    b:SetSize(200, 22)
+    b:SetScript("OnClick", function() SetSongMode(DB.songMode == 2 and 1 or 2) end)
+    b.SetChoice = function(self, v) self:SetText(SONGMODE_LABELS[v] or SONGMODE_LABELS[1]) end
+    Tooltip(b, "Song Selection Mode", SONGMODE_TIP)
+    return b, 0
+end
+
+-- 0.6.0: since the tabbed window (BuildWindowControls), only the Settings panel uses this, without opts.
 -- opts (0.5.7, the window only): anchor = region to start under, descs = { bg, loop, titles } descriptions,
 -- pool = add the Leveling Zone Music dropdown, bigLabels = checkbox labels in GameFontNormal (welcome style),
 -- zone = add the 0.5.9 "Disable MusicPlus for this zone" checkbox under Enable.
@@ -2405,7 +2630,7 @@ local function BuildControls(parent, prefix, x, y, opts)
     if opts.zone then -- 0.5.9: Disable MusicPlus for this zone (label = the zone you're in, see RefreshZoneBoxes)
         c.zone = CreateFrame("CheckButton", prefix .. "Zone", parent, "UICheckButtonTemplate")
         place(c.zone)
-        c.zone.Text:SetWidth(WIN_W - 70) -- a long zone name wraps to a 2nd line instead of running out of the window
+        c.zone.Text:SetWidth(DESC_W) -- a long zone name wraps to a 2nd line instead of running out of the window
         c.zone.Text:SetJustifyH("LEFT")
         c.zone:SetScript("OnClick", function(self)
             local z = self.zoneObj
@@ -2416,8 +2641,8 @@ local function BuildControls(parent, prefix, x, y, opts)
             "zones aren't affected. Saved per zone. Only for zones MusicPlus plays in. Also /mplus zone off / on.")
         after(c.zone, nil)
         -- 0.5.18: Zephras Isle help line, shown only while there (RefreshZoneBoxes re-anchors the next control)
-        c.zoneDesc = AddDesc(parent, c.zone, 26, 3, "We don't recommend using MusicPlus in this zone, but if you " ..
-            "really want to, you can uncheck this box.")
+        c.zoneDesc = AddDesc(parent, c.zone, 26, 3, "Off by default: Blizzard gave Zephras Isle its own scripted " ..
+            "soundtrack. Uncheck to use MusicPlus here anyway (not recommended).")
         c.zoneDesc:Hide()
     end
 
@@ -2455,6 +2680,25 @@ local function BuildControls(parent, prefix, x, y, opts)
         "the game's original city intro once, then the normal rotation. At most once per hour per city. Also /mplus intro on/off/test.")
     after(c.intros, descs.intros)
 
+    -- 0.6.0: the now-playing widget (Show + Lock, the Lock box smaller and indented under it)
+    c.widget = CreateFrame("CheckButton", prefix .. "Widget", parent, "UICheckButtonTemplate")
+    place(c.widget)
+    c.widget.Text:SetText("Show MusicPlus widget")
+    c.widget:SetScript("OnClick", function(self) SetWidgetShown(self:GetChecked()) end)
+    Tooltip(c.widget, "MusicPlus widget", "Off (default). A small movable bar with the song playing now and Previous, " ..
+        "Replay and Skip buttons. Drag it with the left mouse button, right-click it to lock or unlock it. Hidden while " ..
+        "MusicPlus is off. Also /mplus widget on/off/lock/unlock/reset.")
+    after(c.widget, descs.widget)
+    c.widgetLock = CreateFrame("CheckButton", prefix .. "WidgetLock", parent, "UICheckButtonTemplate")
+    c.widgetLock:SetSize(24, 24)
+    c.widgetLock:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 20 - lastCol, lastIsDesc and -2 or 2)
+    c.widgetLock.Text:SetText("Lock widget position")
+    c.widgetLock:SetScript("OnClick", function(self) SetWidgetLock(self:GetChecked()) end)
+    Tooltip(c.widgetLock, "Lock widget position", "Off (default): drag the widget to move it. On: it stays put. " ..
+        "Right-clicking the widget does the same.")
+    after(c.widgetLock, nil)
+    lastCol = 20 -- the Lock box sits 20 px right of the checkbox column
+
     if opts.pool then -- 0.5.7: Leveling Zone Music
         c.poolLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
         c.poolLabel:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 4 - lastCol, -12)
@@ -2468,25 +2712,35 @@ local function BuildControls(parent, prefix, x, y, opts)
         c.poolDesc = AddDesc(parent, c.poolDescZone, 0, -4, "All zones: a leveling zone plays its own original tracks, then " ..
             "custom songs from all " .. (#ZONE_ORDER - 6) .. " leveling zones. Cities always keep their own music.")
         last, lastIsDesc, lastCol = c.poolDesc, true, 4
+        -- 0.6.0: Song Selection Mode (label + dropdown, tooltip on the dropdown), still in the Leveling Zone Music section
+        c.songModeLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        c.songModeLabel:SetPoint("TOPLEFT", c.poolDesc, "BOTTOMLEFT", 0, -10)
+        c.songModeLabel:SetText("Song Selection Mode")
+        c.songMode, dx = BuildSongModeDropDown(parent, prefix .. "SongMode")
+        c.songMode:SetPoint("TOPLEFT", c.songModeLabel, "BOTTOMLEFT", dx, -4)
+        -- both descriptions under the dropdown, exactly like the Leveling Zone Music ones (the selected one brighter, RefreshUI)
+        c.songModeDescClassic = AddDesc(parent, c.songModeLabel, 0, -40, "Classic Tracks and MusicPlus: plays classic tracks " ..
+            "first, then MusicPlus tracks.")
+        c.songModeDescOnly = AddDesc(parent, c.songModeDescClassic, 0, -4, "MusicPlus Tracks Only: plays only MusicPlus tracks " ..
+            "(city intros still play if enabled).")
+        last, lastIsDesc, lastCol = c.songModeDescOnly, true, 4
     end
 
-    c.vol = CreateFrame("Slider", prefix .. "Volume", parent, "UISliderTemplateWithLabels")
+    c.vol = MakeSlider(parent, prefix .. "Volume", "Music volume", 0, 100, 1)
     c.vol:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 8 - lastCol, lastIsDesc and -28 or -26)
-    c.vol:SetWidth(220)
-    c.vol:SetMinMaxValues(0, 100)
-    c.vol:SetValueStep(1)
-    c.vol:SetObeyStepOnDrag(true)
-    c.vol.Low:SetText("0%")
-    c.vol.High:SetText("100%")
-    c.vol:SetScript("OnValueChanged", function(self, value)
-        value = math.floor(value + 0.5)
-        self.Text:SetText(("Music volume: %d%%"):format(value))
-        if self.refreshing then return end
-        if S.fade then AdoptFadeVolume(value / 100) -- during a fade: new saved volume, the fade goes on
-        else SetVolume(("%.2f"):format(value / 100)) end
-    end)
-    Tooltip(c.vol, "Music volume", "Sets the game's Music volume (" .. VOL_CVAR .. "). MusicPlus plays on " ..
-        "the Music channel, so this is also the volume of the game's own music. Ambient sounds aren't affected.")
+    if c.vol.failed ~= true then
+        c.vol.Low:SetText("0%")
+        c.vol.High:SetText("100%")
+        c.vol:SetScript("OnValueChanged", function(self, value)
+            value = math.floor(value + 0.5)
+            self.Text:SetText(("Music volume: %d%%"):format(value))
+            if self.refreshing then return end
+            if S.fade then AdoptFadeVolume(value / 100) -- during a fade: new saved volume, the fade goes on
+            else SetVolume(("%.2f"):format(value / 100)) end
+        end)
+        Tooltip(c.vol, "Music volume", "Sets the game's Music volume (" .. VOL_CVAR .. "). MusicPlus plays on " ..
+            "the Music channel, so this is also the volume of the game's own music. Ambient sounds aren't affected.")
+    end
 
     c.skip = CreateFrame("Button", prefix .. "Skip", parent, "UIPanelButtonTemplate")
     c.skip:SetSize(80, 22)
@@ -2494,10 +2748,15 @@ local function BuildControls(parent, prefix, x, y, opts)
     c.skip:SetText("Skip")
     c.skip:SetScript("OnClick", function() if S.active then Advance(S.gen) end end)
 
-    c.now = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    c.now:SetPoint("LEFT", c.skip, "RIGHT", 8, 0)
-    c.now:SetPoint("RIGHT", parent, "RIGHT", -12, 0)
-    c.now:SetJustifyH("LEFT")
+    if opts.now then -- 0.6.0: the window's own "Now Playing" line (under the intro blurb, see CreateOptionsWindow)
+        c.now, c.nowRich = opts.now, true
+    else -- Settings panel: next to Skip as before (0.6.0: a fixed width; the RIGHT anchor to the panel's middle
+         -- used to pull the line up to the panel's vertical center)
+        c.now = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        c.now:SetPoint("LEFT", c.skip, "RIGHT", 8, 0)
+        c.now:SetWidth(320)
+        c.now:SetJustifyH("LEFT")
+    end
     controlSets[#controlSets + 1] = c
     return c
 end
@@ -2516,16 +2775,13 @@ local function RefreshZoneBoxes()
             c.zone.zoneObj = z or false -- false, not nil: a nil field would fall through to frame lookups
             local zeph = z and z.key == ZEPHRAS_KEY
             if c.zoneDesc and c.zoneDesc:IsShown() ~= (zeph and true or false) then -- 0.5.18: show/collapse the help line
-                c.bg:ClearAllPoints()
+                c.bg:ClearAllPoints()   -- 0.6.0: the General tab has room for it, the window keeps its size
                 if zeph then
                     c.zoneDesc:Show()
                     c.bg:SetPoint("TOPLEFT", c.zoneDesc, "BOTTOMLEFT", -26, -6)
                 else
                     c.zoneDesc:Hide()
                     c.bg:SetPoint("TOPLEFT", c.zone, "BOTTOMLEFT", 0, -2)
-                end
-                if c.parent and c.parent.SetHeight then
-                    c.parent:SetHeight(WIN_H + (zeph and math.ceil((c.zoneDesc:GetStringHeight() or 12) + 8) or 0))
                 end
             end
             if zeph then
@@ -2550,10 +2806,208 @@ local function RefreshZoneBoxes()
     end
 end
 
+---------------------------------------------------------------- 0.6.0: now-playing widget ("slim bar")
+-- A 242 x 31 frame on UIParent (0.6.0: 10% bigger than the first 220 x 28, by sizes, not SetScale, so it stays crisp
+-- and saved positions keep their meaning) with the tooltip backdrop (BackdropTemplate where the client has it), the
+-- MusicPlus logo (Media\logo.tga, 64 x 64 32-bit TGA: the CurseForge project logo),
+-- the title (one line, cut with "..." by the client) and Previous / Replay / Skip buttons (spellbook page arrows and
+-- the character-model rotate arrow: all original Classic textures). Left-drag moves it (unless locked), right-click
+-- locks / unlocks, the position is saved in MusicPlusDB.widgetPos, clamped to the screen. Shown only with
+-- MusicPlusDB.widget on and MusicPlus enabled. Text and buttons follow RefreshNowLabel (same moments as the window).
+local widget
+local WIDGET_W, WIDGET_H = 242, 31
+local WIDGET_ICON = "Interface\\AddOns\\MusicPlus\\Media\\logo"
+
+local function WidgetDefaultPoint(f) -- top center, 120 px down on screen at any widget size
+    f:ClearAllPoints()
+    f:SetPoint("TOP", UIParent, "TOP", 0, -120 / (DB.widgetScale or 1))
+end
+
+local function WidgetSavePos(f)
+    local point, _, relPoint, px, py = f:GetPoint()
+    if point then DB.widgetPos = { point, relPoint, px, py } end
+end
+
+local function WidgetTooltip(self)
+    GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+    if S.track then
+        GameTooltip:SetText(S.track.name, 1, 1, 1, 1, true)
+        if S.zone then GameTooltip:AddLine(S.zone.title, 0.4, 0.87, 1) end
+        GameTooltip:AddLine(PosLabel(S.pos), 0.6, 0.6, 0.6)
+    elseif S.gap then
+        GameTooltip:SetText("Silence", 0.6, 0.6, 0.6)
+        if S.zone then GameTooltip:AddLine(S.zone.title, 0.4, 0.87, 1) end
+        GameTooltip:AddLine(GapText(), 0.6, 0.6, 0.6)
+    else
+        GameTooltip:SetText("MusicPlus", 1, 1, 1)
+        GameTooltip:AddLine("Not playing (only in configured zones, not in inns).", 0.6, 0.6, 0.6, true)
+    end
+    GameTooltip:AddLine(DB.widgetLock and "Locked. Right-click to unlock." or "Drag to move. Right-click to lock.", 0.5, 0.5, 0.5)
+    GameTooltip:Show()
+end
+
+local function WidgetMouse(region, f) -- drag and right-click on the bar and on the title area
+    region:EnableMouse(true)
+    region:RegisterForDrag("LeftButton")
+    region:SetScript("OnDragStart", function() if not DB.widgetLock then f:StartMoving() end end)
+    region:SetScript("OnDragStop", function() f:StopMovingOrSizing(); WidgetSavePos(f) end)
+    region:SetScript("OnMouseUp", function(_, button) if button == "RightButton" then SetWidgetLock(not DB.widgetLock, true) end end)
+end
+
+local function WidgetButton(f, name, tex, title, text, onClick)
+    local b = CreateFrame("Button", name, f)
+    b:SetSize(20, 20)
+    b:SetNormalTexture(tex .. "-Up")
+    b:SetPushedTexture(tex .. "-Down")
+    b:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+    b:SetScript("OnClick", onClick)
+    Tooltip(b, title, text)
+    return b
+end
+
+local function CreateWidget()
+    local f = CreateFrame("Frame", "MusicPlusWidget", UIParent, BackdropTemplateMixin and "BackdropTemplate" or nil)
+    f:SetSize(WIDGET_W, WIDGET_H)
+    f:SetScale(DB.widgetScale or 1) -- 0.6.0: Widget Size (before the saved point: its offsets are in this scale)
+    f:SetFrameStrata("MEDIUM")
+    f:SetClampedToScreen(true)
+    f:SetMovable(true)
+    if f.SetBackdrop then
+        f:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            tile = true, tileSize = 16, edgeSize = 12, insets = { left = 3, right = 3, top = 3, bottom = 3 } })
+        f:SetBackdropColor(0, 0, 0, 0.85)
+        f:SetBackdropBorderColor(0.6, 0.6, 0.6, 1)
+    end
+    local p = DB.widgetPos
+    if type(p) == "table" and p[1] then f:SetPoint(p[1], UIParent, p[2], p[3], p[4]) else WidgetDefaultPoint(f) end
+    WidgetMouse(f, f)
+    f.icon = f:CreateTexture(nil, "ARTWORK")
+    f.icon:SetSize(18, 18)
+    f.icon:SetPoint("LEFT", 8, 0)
+    f.icon:SetTexture(WIDGET_ICON)
+    f.skip = WidgetButton(f, "MusicPlusWidgetSkip", "Interface\\Buttons\\UI-SpellbookIcon-NextPage", "Skip",
+        "Next song (same as the Skip button and /mplus skip).", function() if S.active then Advance(S.gen) end end)
+    f.skip:SetPoint("RIGHT", -6, 0)
+    f.replay = WidgetButton(f, "MusicPlusWidgetReplay", "Interface\\Buttons\\UI-RotationLeft-Button", "Replay",
+        "Play this song again from the start (during a silence: the song that just ended).", function() ReplayCurrent() end)
+    f.replay:SetPoint("RIGHT", f.skip, "LEFT", 0, 0)
+    f.prev = WidgetButton(f, "MusicPlusWidgetPrev", "Interface\\Buttons\\UI-SpellbookIcon-PrevPage", "Previous",
+        "Play the song before this one (if there is none, this song starts again). Also /mplus prev.", function() PlayPrevious() end)
+    f.prev:SetPoint("RIGHT", f.replay, "LEFT", 0, 0)
+    f.title = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    local font, size, flags
+    if f.title.GetFont then font, size, flags = f.title:GetFont() end
+    if font and size then f.title:SetFont(font, math.floor(size * 1.1 + 0.5), flags) end -- 10% bigger too
+    f.title:SetPoint("LEFT", f.icon, "RIGHT", 6, 0)
+    f.title:SetPoint("RIGHT", f.prev, "LEFT", -3, 0)
+    f.title:SetHeight(16)
+    f.title:SetJustifyH("LEFT")
+    if f.title.SetWordWrap then f.title:SetWordWrap(false) end
+    f.hover = CreateFrame("Frame", nil, f) -- the title area: tooltip (and drag / right-click like the bar)
+    f.hover:SetPoint("TOPLEFT", f.icon, "TOPLEFT", -3, 4)
+    f.hover:SetPoint("BOTTOMRIGHT", f.title, "BOTTOMRIGHT", 0, -4)
+    WidgetMouse(f.hover, f)
+    f.hover:SetScript("OnEnter", WidgetTooltip)
+    f.hover:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    return f
+end
+
+local function WidgetButtonState(b, on)
+    b:SetEnabled(on and true or false)
+    b:SetAlpha(on and 1 or 0.4)
+end
+
+local function UpdateWidget()
+    local want = DB.widget and DB.enabled
+    if not want then
+        if widget then widget:Hide() end
+        return
+    end
+    widget = widget or CreateWidget()
+    widget:Show()
+    if S.track then
+        widget.title:SetText(S.track.name)
+        widget.title:SetTextColor(1, 1, 1)
+    elseif S.gap then
+        local left = GapLeft()
+        widget.title:SetText(("Silence (%d:%02d)"):format(math.floor(left / 60), left % 60))
+        widget.title:SetTextColor(0.6, 0.6, 0.6)
+    else
+        local here = not S.active and ZoneDisabled(CurrentZone())
+        widget.title:SetText(S.active and "\226\128\148" or (here and "Off in this zone" or "Not playing"))
+        widget.title:SetTextColor(0.6, 0.6, 0.6)
+    end
+    local live = S.active and not S.testing
+    WidgetButtonState(widget.prev, live and (S.track ~= nil or S.cur ~= nil))
+    WidgetButtonState(widget.replay, live and (S.track ~= nil or S.gap ~= nil))
+    WidgetButtonState(widget.skip, S.active)
+end
+
+function SetWidgetShown(on)
+    DB.widget = on and true or false
+    UpdateWidget()
+    RefreshUI()
+end
+
+function SetWidgetLock(on, announce)
+    DB.widgetLock = on and true or false
+    if widget then widget:StopMovingOrSizing() end
+    if announce then Print("Widget " .. (DB.widgetLock and "locked." or "unlocked: drag it to move it.")) end
+    RefreshUI()
+end
+
+local function ResetWidget() -- the place only; the Widget Size stays
+    DB.widgetPos = nil
+    if widget then WidgetDefaultPoint(widget) end
+end
+
+-- 0.6.0: Widget Size, 50-200 % in 5 % steps (MusicPlusDB.widgetScale, 0.5-2, default 1), applied with SetScale.
+-- The widget stays put on screen: at the default place its top center stays (WidgetDefaultPoint), a moved widget
+-- keeps its center (a point's offsets are in the frame's own scale, so they're converted old/new and saved).
+function SetWidgetScale(v)
+    v = tonumber(v)
+    if not v then return end
+    v = math.floor(v * 20 + 0.5) / 20
+    if v < 0.5 then v = 0.5 elseif v > 2 then v = 2 end
+    local old = DB.widgetScale or 1
+    DB.widgetScale = v
+    if widget and v ~= old then
+        local cx, cy
+        if DB.widgetPos ~= nil and widget.GetCenter then cx, cy = widget:GetCenter() end
+        widget:SetScale(v)
+        if cx and cy then
+            local x, y = cx * old / v, cy * old / v
+            widget:ClearAllPoints()
+            widget:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x, y)
+            DB.widgetPos = { "CENTER", "BOTTOMLEFT", x, y }
+        elseif DB.widgetPos == nil then
+            WidgetDefaultPoint(widget)
+        end
+    end
+    RefreshUI()
+end
+
+-- 0.6.0: the window's line: "Now Playing: " in the line's light cyan, the title in white, the position in grey
+local NOW_TITLE, NOW_GREY = "|cffffffff", "|cff999999"
+local function RichNow(title, suffix)
+    return "Now Playing: " .. NOW_TITLE .. title .. "|r" .. (suffix and (" " .. NOW_GREY .. "(" .. suffix .. ")|r") or "")
+end
+
 function RefreshNowLabel()
+    UpdateWidget() -- 0.6.0: the widget follows the same moments
     local here -- 0.5.9: "disabled for this zone" instead of "Not playing (...)" there
     for _, c in ipairs(controlSets) do
-        if S.track then
+        if c.nowRich then -- 0.6.0: same states as below, window style
+            if S.track then
+                c.now:SetText(RichNow(S.track.name, PosLabel(S.pos)))
+            elseif S.gap then
+                c.now:SetText("Now Playing: " .. NOW_GREY .. GapText() .. "|r")
+            else
+                if here == nil then here = (not S.active and ZoneDisabled(CurrentZone())) or false end
+                c.now:SetText("Now Playing: " .. NOW_GREY .. (S.active and "\226\128\148" or (here and "\226\128\148 not playing (disabled for this zone)"
+                    or "\226\128\148 not playing (only in configured zones, not in inns)")) .. "|r")
+            end
+        elseif S.track then
             c.now:SetText(("Now: %s (%s)"):format(S.track.name, PosLabel(S.pos)))
         elseif S.gap then
             c.now:SetText(GapText())
@@ -2572,15 +3026,30 @@ function RefreshUI()
         c.loop:SetChecked(DB.loop)
         c.titles:SetChecked(DB.titles)
         c.intros:SetChecked(DB.intros) -- 0.5.18
+        c.widget:SetChecked(DB.widget)         -- 0.6.0
+        c.widgetLock:SetChecked(DB.widgetLock) -- 0.6.0
+        if c.widgetScale and c.widgetScale.failed ~= true then -- 0.6.0: Widget Size (window only)
+            c.widgetScale.refreshing = true
+            c.widgetScale:SetValue(math.floor((DB.widgetScale or 1) * 100 + 0.5))
+            c.widgetScale.refreshing = false
+        end
         if c.pool then c.pool:SetChoice(DB.pool) end -- 0.5.7
+        if c.songMode then c.songMode:SetChoice(DB.songMode) end -- 0.6.0
         if c.poolDescZone then -- 0.5.9: the selected choice's description brighter
             local a, b = (DB.pool == "all") and 0.55 or 0.95, (DB.pool == "all") and 0.95 or 0.55
             c.poolDescZone:SetTextColor(a, a, a)
             c.poolDesc:SetTextColor(b, b, b)
         end
-        c.vol.refreshing = true
-        c.vol:SetValue(GetVolumePercent())
-        c.vol.refreshing = false
+        if c.songModeDescClassic then -- 0.6.0: the same for Song Selection Mode
+            local a, b = (DB.songMode == 2) and 0.55 or 0.95, (DB.songMode == 2) and 0.95 or 0.55
+            c.songModeDescClassic:SetTextColor(a, a, a)
+            c.songModeDescOnly:SetTextColor(b, b, b)
+        end
+        if c.vol.failed ~= true then
+            c.vol.refreshing = true
+            c.vol:SetValue(GetVolumePercent())
+            c.vol.refreshing = false
+        end
         c.skip:SetEnabled(S.active)
     end
     RefreshZoneBoxes() -- 0.5.9
@@ -2604,13 +3073,239 @@ local function MakeWindow(name, width, height, title)
     return f
 end
 
--- 0.5.7: THE window (options menu + the 0.5.2 welcome). Layout, top to bottom (WIN_W x WIN_H):
---   "Welcome to MusicPlus" heading, intro line | Enable | Disable MusicPlus for this zone (0.5.9) |
---   Background sound + description | Loop music + description | Show song titles + description |
---   "Leveling Zone Music" label, dropdown, both descriptions (0.5.9) | Music volume slider |
---   Skip + song playing now | "/mplus at any time" note | Close (bottom center; "Got it" before 0.5.9). X / Escape / Close close it.
+-- 0.6.0: THE window (options + the 0.5.2 welcome), WIN_W x WIN_H. Layout:
+--   header (full width): title bar | one welcome line | "Now Playing: ..." line + Skip on its right
+--   left: bordered navigation column (120 px): General / Music / Widget, gold text rows, the selected one white on a
+--         light highlight bar, hover highlight | right: bordered content panel with the selected page
+--   Close (bottom right). X / Escape / Close close it. The last page is saved in MusicPlusDB.optTab (1-3).
+-- The controls carry the same names and fields as BuildControls' (one control set), so RefreshUI / RefreshZoneBoxes /
+-- RefreshNowLabel drive them unchanged.
+local TAB_NAMES = { "General", "Music", "Widget" }
+local PANEL_BOTTOM = 44 -- the two panels: from under the Now Playing line (about y -120) down to above Close
+
+local TIPS = {
+    enable = "Turns MusicPlus on or off everywhere. Off: the game's own music plays and the widget hides. Also /mplus on / off.",
+    zone = "Ticked: MusicPlus stays quiet in this zone (it fades out if playing) and the game's own music plays here, as if " ..
+        "MusicPlus were off, but only in this zone. Other zones aren't affected. Saved per zone. Only for zones MusicPlus " ..
+        "plays in. Zephras Isle is off by default: Blizzard gave Zephras Isle its own scripted soundtrack; untick to use " ..
+        "MusicPlus there anyway (not recommended). Also /mplus zone off / on (and /mplus zephras on / off).",
+    bg = "On (default): the music keeps playing when the game window isn't focused (alt-tab). It sets the game's " ..
+        "\"Sound in Background\" option (" .. BG_CVAR .. "), which applies to all game sound. Also /mplus bgsound.",
+    loop = "On (default): the next song starts as soon as one ends. Off: like the game's own music with its Loop Music " ..
+        "option off, " .. GAP_MIN / 60 .. "-" .. GAP_MAX / 60 .. " minutes of silence between songs (the game's zone music " ..
+        "stays quiet too). The game's own Loop Music option isn't changed. Also /mplus loop on / off.",
+    titles = "Off (default). On: \"Now playing: <song> (Original 3/8)\" in chat at every song change. The Now Playing " ..
+        "line above, the widget and /mplus status always show the current song. Also /mplus titles on / off.",
+    intros = "On (default): arriving in Stormwind, Ironforge, Darnassus, Orgrimmar, Thunder Bluff and Undercity plays " ..
+        "the game's original city intro once, then the normal rotation (also in MusicPlus Tracks Only mode). At most " ..
+        "once per hour per city. Also /mplus intro on / off / test.",
+    pool = "For this zone only (default): each zone plays its own songs. Play music from all zones: in the " ..
+        (#ZONE_ORDER - 6) .. " leveling zones the custom part of the rotation is the custom songs of all leveling zones " ..
+        "together; the zone's own original tracks still come first. Cities always keep their own music. Also /mplus pool zone / all.",
+    widget = "Off (default). A small movable bar with the song playing now and Previous, Replay and Skip buttons; hover " ..
+        "the title for zone and position. Drag it with the left mouse button, right-click it to lock or unlock it. Hidden " ..
+        "while MusicPlus is off. Also /mplus widget on / off.",
+    widgetLock = "Off (default): drag the widget to move it. On: it stays put. Right-clicking the widget does the same. " ..
+        "Also /mplus widget lock / unlock.",
+    widgetReset = "Puts the widget back at its default place (top center of the screen); its size stays. Also /mplus widget reset.",
+    widgetScale = "50% to 200% (default 100%). The widget grows or shrinks around its center (at its default place: " ..
+        "around its top center), so it doesn't jump. Saved. Also /mplus widget scale 50-200.",
+    vol = "Sets the game's Music volume (" .. VOL_CVAR .. "). MusicPlus plays on the Music channel, so this is also the " ..
+        "volume of the game's own music. Ambient sounds aren't affected.",
+    skip = "Next song (also during a silence). Also /mplus skip.",
+}
+
+local function BuildWindowControls(f)
+    local c = { parent = f, now = f.now, nowRich = true }
+    local pages = {}
+    for i = 1, #TAB_NAMES do
+        local pg = CreateFrame("Frame", "MusicPlusOptPage" .. i, f.content)
+        pg:SetPoint("TOPLEFT", f.content, "TOPLEFT", 6, -6) -- 6 px inside the panel's border
+        pg:SetPoint("BOTTOMRIGHT", f.content, "BOTTOMRIGHT", -6, 6)
+        pg:Hide()
+        pages[i] = pg
+    end
+    f.pages = pages
+    local function check(page, name, label, tipTitle, tip, onClick)
+        local b = CreateFrame("CheckButton", "MusicPlusOpt" .. name, page, "UICheckButtonTemplate")
+        b.Text:SetText(label)
+        b.Text:SetFontObject("GameFontNormal")
+        b:SetScript("OnClick", onClick)
+        Tooltip(b, tipTitle, tip)
+        return b
+    end
+    local function grey(page, cb, text) -- the one short grey line under a checkbox (26 px in: the label column)
+        cb.desc = AddDesc(page, cb, 26, 3, text)
+        return cb.desc
+    end
+
+    -- header Skip (right of the Now Playing line)
+    c.skip = CreateFrame("Button", "MusicPlusOptSkip", f, "UIPanelButtonTemplate")
+    c.skip:SetSize(70, 22)
+    c.skip:SetPoint("LEFT", f.now, "RIGHT", 6, 0)
+    c.skip:SetText("Skip")
+    c.skip:SetScript("OnClick", function() if S.active then Advance(S.gen) end end)
+    Tooltip(c.skip, "Skip", TIPS.skip)
+
+    ---------------- General
+    local g = pages[1]
+    c.enable = check(g, "Enable", "Enable MusicPlus (" .. #ZONE_ORDER .. " zones)", "Enable MusicPlus", TIPS.enable,
+        function(self) SetEnabled(self:GetChecked()) end)
+    c.enable:SetPoint("TOPLEFT", g, "TOPLEFT", 0, 0)
+    c.zone = check(g, "Zone", "Disable MusicPlus for this zone", "Disable MusicPlus for this zone", TIPS.zone, function(self)
+        local z = self.zoneObj
+        if z then SetZoneDisabled(z, self:GetChecked()) else self:SetChecked(false) end
+    end)
+    c.zone:SetPoint("TOPLEFT", c.enable, "BOTTOMLEFT", 0, -2)
+    c.zone.Text:SetWidth(DESC_W) -- a long zone name wraps to a 2nd line instead of running out of the window
+    c.zone.Text:SetJustifyH("LEFT")
+    -- 0.5.18: Zephras Isle note, shown only while there (RefreshZoneBoxes re-anchors Background under it)
+    c.zoneDesc = AddDesc(g, c.zone, 26, 3, "Off by default: Blizzard gave Zephras Isle its own scripted soundtrack. Uncheck to use MusicPlus here anyway " ..
+        "(not recommended).")
+    c.zoneDesc:Hide()
+    c.bg = check(g, "BgSound", "Play music when game is in background", "Sound in Background", TIPS.bg, OnBgClick)
+    c.bg:SetPoint("TOPLEFT", c.zone, "BOTTOMLEFT", 0, -2)
+    grey(g, c.bg, "On (default): the music keeps playing when the game window isn't focused. " ..
+        "It sets the game's \"Sound in Background\" option.") -- 0.6.0: the 0.5.15-era wording again
+    c.loop = check(g, "Loop", "Loop music (no silence between songs)", "Loop music", TIPS.loop,
+        function(self) SetLoop(self:GetChecked()) end)
+    c.loop:SetPoint("TOPLEFT", c.bg.desc, "BOTTOMLEFT", -26, -6)
+    grey(g, c.loop, "On (default): songs play back to back. Off: a random " .. GAP_MIN / 60 .. "-" .. GAP_MAX / 60 ..
+        " minute silence between songs, like the game's own zone music.")
+    c.titles = check(g, "Titles", "Show song titles in chat", "Show song titles", TIPS.titles,
+        function(self) SetTitles(self:GetChecked()) end)
+    c.titles:SetPoint("TOPLEFT", c.loop.desc, "BOTTOMLEFT", -26, -6)
+    grey(g, c.titles, "Off (default). When on, a \"Now playing\" line appears in chat each time a new song starts.")
+    c.vol = MakeSlider(g, "MusicPlusOptVolume", "Music volume", 0, 100, 1) -- 0.6.0 fix: full 220 x 17 size
+    c.vol:SetPoint("TOPLEFT", c.titles.desc, "BOTTOMLEFT", -18, -30)
+    if c.vol.failed ~= true then
+        c.vol.Low:SetText("0%")
+        c.vol.High:SetText("100%")
+        c.vol:SetScript("OnValueChanged", function(self, value)
+            value = math.floor(value + 0.5)
+            self.Text:SetText(("Music volume: %d%%"):format(value))
+            if self.refreshing then return end
+            if S.fade then AdoptFadeVolume(value / 100) -- during a fade: new saved volume, the fade goes on
+            else SetVolume(("%.2f"):format(value / 100)) end
+        end)
+        Tooltip(c.vol, "Music volume", TIPS.vol)
+    end
+    c.note = AddDesc(g, c.vol, -4, -24, "Type /mplus at any time to open this window again.")
+
+    ---------------- Music
+    local m = pages[2]
+    local dx
+    c.poolLabel = m:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    c.poolLabel:SetPoint("TOPLEFT", m, "TOPLEFT", 4, -4)
+    c.poolLabel:SetText("Leveling Zone Music")
+    c.pool, dx = BuildPoolDropDown(m, "MusicPlusOptPool")
+    c.pool:SetPoint("TOPLEFT", c.poolLabel, "BOTTOMLEFT", dx, -4)
+    if c.pool.EnableMouse and c.pool.GetObjectType and c.pool:GetObjectType() == "Frame" then c.pool:EnableMouse(true) end
+    Tooltip(c.pool, "Leveling Zone Music", TIPS.pool)
+    c.poolDescZone = AddDesc(m, c.poolLabel, 0, -40, "For this zone only: plays this zone's original music, then " ..
+        "its own custom songs.")
+    c.poolDesc = AddDesc(m, c.poolDescZone, 0, -4, "All zones: a leveling zone plays its own original tracks, then " ..
+        "custom songs from all " .. (#ZONE_ORDER - 6) .. " leveling zones. Cities always keep their own music.")
+    c.songModeLabel = m:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    c.songModeLabel:SetPoint("TOPLEFT", c.poolDesc, "BOTTOMLEFT", 0, -14)
+    c.songModeLabel:SetText("Song Selection Mode")
+    c.songMode, dx = BuildSongModeDropDown(m, "MusicPlusOptSongMode")
+    c.songMode:SetPoint("TOPLEFT", c.songModeLabel, "BOTTOMLEFT", dx, -4)
+    c.songModeDescClassic = AddDesc(m, c.songModeLabel, 0, -40, "Classic Tracks and MusicPlus: plays classic tracks " ..
+        "first, then MusicPlus tracks.")
+    c.songModeDescOnly = AddDesc(m, c.songModeDescClassic, 0, -4, "MusicPlus Tracks Only: plays only MusicPlus tracks " ..
+        "(city intros still play if enabled).")
+    c.intros = check(m, "Intros", "Play city intro on arrival", "City intro", TIPS.intros,
+        function(self) DB.intros = self:GetChecked() and true or false end)
+    c.intros:SetPoint("TOPLEFT", c.songModeDescOnly, "BOTTOMLEFT", -4, -12)
+    grey(m, c.intros, "On (default): the city's intro once, then the rotation.")
+
+    ---------------- Widget
+    local w = pages[3]
+    c.widget = check(w, "Widget", "Show MusicPlus widget", "MusicPlus widget", TIPS.widget,
+        function(self) SetWidgetShown(self:GetChecked()) end)
+    c.widget:SetPoint("TOPLEFT", w, "TOPLEFT", 0, 0)
+    grey(w, c.widget, "Off (default). A small movable bar: the song, Previous, Replay and Skip.")
+    c.widgetLock = check(w, "WidgetLock", "Lock widget position", "Lock widget position", TIPS.widgetLock,
+        function(self) SetWidgetLock(self:GetChecked()) end)
+    c.widgetLock:SetSize(24, 24)
+    c.widgetLock:SetPoint("TOPLEFT", c.widget.desc, "BOTTOMLEFT", -6, -6) -- 20 px in from the checkbox column
+    c.widgetReset = CreateFrame("Button", "MusicPlusOptWidgetReset", w, "UIPanelButtonTemplate")
+    c.widgetReset:SetSize(120, 22)
+    c.widgetReset:SetPoint("TOPLEFT", c.widgetLock, "BOTTOMLEFT", 4, -8)
+    c.widgetReset:SetText("Reset position")
+    c.widgetReset:SetScript("OnClick", function()
+        ResetWidget()
+        Print("Widget moved back to its default place (top center)." .. (DB.widget and "" or " It's hidden: tick Show MusicPlus widget."))
+    end)
+    Tooltip(c.widgetReset, "Reset position", TIPS.widgetReset)
+    c.widgetHint = AddDesc(w, c.widgetReset, -4, -8, "Drag the widget to move it; right-click it to lock or unlock.")
+    -- 0.6.0: Widget Size, styled like the Music volume slider
+    c.widgetScale = MakeSlider(w, "MusicPlusOptWidgetScale", "Widget size", 50, 200, 5) -- child of the Widget page
+    c.widgetScale:SetPoint("TOPLEFT", c.widgetHint, "BOTTOMLEFT", -12, -30)
+    if c.widgetScale.failed ~= true then
+        c.widgetScale.Low:SetText("50%")
+        c.widgetScale.High:SetText("200%")
+        c.widgetScale:SetScript("OnValueChanged", function(self, value)
+            value = math.floor(value / 5 + 0.5) * 5
+            self.Text:SetText(("Widget size: %d%%"):format(value))
+            if self.refreshing then return end
+            SetWidgetScale(value / 100) -- live: the widget rescales while dragging
+        end)
+        Tooltip(c.widgetScale, "Widget size", TIPS.widgetScale)
+        c.widgetScale:Show()
+    end
+
+    controlSets[#controlSets + 1] = c
+    return c
+end
+
+-- 0.6.0: show page i (1-3), highlight its row in the navigation column, save it
+local function SelectOptionsTab(f, i)
+    i = (i == 2 or i == 3) and i or 1
+    DB.optTab = i
+    if CloseDropDownMenus then CloseDropDownMenus() end
+    for k, pg in ipairs(f.pages) do if k == i then pg:Show() else pg:Hide() end end
+    for k, r in ipairs(f.navRows) do
+        if k == i then r.sel:Show(); r.label:SetFontObject("GameFontHighlight") -- white on the highlight bar
+        else r.sel:Hide(); r.label:SetFontObject("GameFontNormal") end         -- gold
+    end
+    f.selectedTab = i
+end
+
+-- 0.6.0: the left navigation column's rows (HealBot-style): gold text, hover highlight, the selected one white on a
+-- light highlight bar
+local function BuildOptionsNav(f)
+    f.navRows = {}
+    for i, label in ipairs(TAB_NAMES) do
+        local r = CreateFrame("Button", "MusicPlusOptNav" .. i, f.nav)
+        r:SetHeight(22)
+        if i == 1 then
+            r:SetPoint("TOPLEFT", f.nav, "TOPLEFT", 6, -8)
+            r:SetPoint("TOPRIGHT", f.nav, "TOPRIGHT", -6, -8)
+        else
+            r:SetPoint("TOPLEFT", f.navRows[i - 1], "BOTTOMLEFT", 0, -2)
+            r:SetPoint("TOPRIGHT", f.navRows[i - 1], "BOTTOMRIGHT", 0, -2)
+        end
+        r.sel = r:CreateTexture(nil, "BACKGROUND")
+        r.sel:SetAllPoints(r)
+        r.sel:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+        r.sel:SetBlendMode("ADD")
+        r.sel:Hide()
+        r:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+        local hl = r.GetHighlightTexture and r:GetHighlightTexture()
+        if hl and hl.SetAlpha then hl:SetAlpha(0.5) end
+        r.label = r:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        r.label:SetPoint("LEFT", r, "LEFT", 8, 0)
+        r.label:SetJustifyH("LEFT")
+        r.label:SetText(label)
+        r:SetScript("OnClick", function() SelectOptionsTab(f, i) end)
+        f.navRows[i] = r
+    end
+end
+
 local function CreateOptionsWindow()
-    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.5.19")
+    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.6.0")
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, relPoint, px, py = self:GetPoint()
@@ -2618,6 +3313,8 @@ local function CreateOptionsWindow()
     end)
     local p = DB.pos
     if type(p) == "table" and p[1] then f:SetPoint(p[1], UIParent, p[2], p[3], p[4]) else f:SetPoint("CENTER") end
+    -- header (0.5.15's again): "Welcome to MusicPlus" heading and its intro text, then Now Playing (cyan label,
+    -- white title, grey position) + Skip on its right. A longer intro (more lines) pushes the panels down.
     f.heading = f:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     f.heading:SetPoint("TOPLEFT", 16, -32)
     f.heading:SetText("Welcome to MusicPlus")
@@ -2627,31 +3324,45 @@ local function CreateOptionsWindow()
     f.intro:SetJustifyH("LEFT")
     f.intro:SetText("MusicPlus plays each zone's original Classic music plus custom songs in a shuffled rotation, " ..
         "and leaves inn music untouched wherever the game has it.")
-    local c = BuildControls(f, "MusicPlusOpt", -4, -6, {
-        anchor = f.intro, pool = true, bigLabels = true, zone = true,
-        descs = {
-            bg = "On (default): the music keeps playing when the game window isn't focused. " ..
-                "It sets the game's \"Sound in Background\" option.",
-            loop = "On (default): songs play back to back. Off: a random " .. GAP_MIN / 60 .. "-" .. GAP_MAX / 60 ..
-                " minute silence between songs, like the game's own zone music.",
-            titles = "Off (default). When on, a \"Now playing\" line appears in chat each time a new song starts.",
-        },
-    })
-    f.controls = c
-    local note = f:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    note:SetPoint("TOPLEFT", c.skip, "BOTTOMLEFT", 4, -14)
-    note:SetWidth(WIN_W - 32)
-    note:SetJustifyH("LEFT")
-    note:SetText("Type /mplus at any time to open this window again.")
-    f.note = note
+    f.now = f:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    f.now:SetPoint("TOPLEFT", f.intro, "BOTTOMLEFT", 0, -9) -- directly under the welcome text (left edge x 16)
+    f.now:SetWidth(WIN_W - 32 - 76) -- Skip (70) + 6 px on its right
+    f.now:SetHeight(18)
+    f.now:SetJustifyH("LEFT")
+    if f.now.SetWordWrap then f.now:SetWordWrap(false) end
+    f.now:SetTextColor(0.4, 0.87, 1)
+    -- bordered dark inset with a gold-ish edge (the navigation column and the content panel)
+    local function MakeInsetPanel(name, parent)
+        local p = CreateFrame("Frame", name, parent, BackdropTemplateMixin and "BackdropTemplate" or nil)
+        if p.SetBackdrop then
+            p:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+                tile = true, tileSize = 16, edgeSize = 14, insets = { left = 3, right = 3, top = 3, bottom = 3 } })
+            p:SetBackdropColor(0, 0, 0, 0.55)
+            p:SetBackdropBorderColor(0.85, 0.7, 0.3, 1)
+        end
+        return p
+    end
+    -- left navigation column (120 px) and the content panel (the pages live in it)
+    f.nav = MakeInsetPanel("MusicPlusOptNav", f)
+    f.nav:SetPoint("TOPLEFT", f.now, "BOTTOMLEFT", -6, -11) -- about y -120 with the 2-line intro
+    f.nav:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 10, PANEL_BOTTOM)
+    f.nav:SetWidth(120)
+    f.content = MakeInsetPanel("MusicPlusOptContent", f)
+    f.content:SetPoint("TOPLEFT", f.nav, "TOPRIGHT", 6, 0)
+    f.content:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, PANEL_BOTTOM)
+    f.controls = BuildWindowControls(f)
+    BuildOptionsNav(f)
     local ok = CreateFrame("Button", "MusicPlusOptOK", f, "UIPanelButtonTemplate")
     ok:SetSize(100, 22)
-    ok:SetPoint("BOTTOM", 0, 14)
+    ok:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -12, 14)
     ok:SetText("Close") -- 0.5.9: was "Got it"
     ok:SetScript("OnClick", function() f:Hide() end)
+    SelectOptionsTab(f, DB.optTab)
     f:SetScript("OnShow", function()
         DB.welcomeShown = true -- 0.5.2: set the moment it's shown: /reload or logout with the window open won't repeat it
+        SelectOptionsTab(f, DB.optTab)
         RefreshUI()
+        FitToScreen(f) -- 0.6.0: a safety net only; 640 px fits typical screens unscaled
     end)
     f:SetScript("OnHide", function() if CloseDropDownMenus then CloseDropDownMenus() end end)
     return f
@@ -2711,7 +3422,7 @@ local function Status()
     end
     Print(("Zone: %s, Real: %s, Subzone: \"%s\""):format(GetZoneText() or "", GetRealZoneText() or "", GetSubZoneText() or ""))
     if z then
-        Print(("%s: %d original + %d custom songs in the rotation%s"):format(z.title, #z.origTracks, #CustomPool(z),
+        Print(("%s: %d original + %d custom songs in the rotation%s"):format(z.title, #OrigPool(z), #CustomPool(z), -- 0.6.0: OrigPool
             (z.city and DB.pool == "all") and " (a city: always its own songs)" or (CustomPool(z) ~= z.customTracks and " (customs from all leveling zones)" or "")))
         Print("This zone: " .. z.title .. " - MusicPlus " .. (ZoneDisabled(z) and "|cffff4040OFF here|r (disabled for this zone; /mplus zone on)"
             or "on here")) -- 0.5.9
@@ -2741,10 +3452,14 @@ local function Status()
         tostring(CVarGet("Sound_EnableMusic")), tostring(CVarGet(VOL_CVAR)), BG_CVAR, tostring(bg)))
     Print(("Saved background choice: %s (MusicPlusDB %s)"):format(DB.bgSound and "on" or "off",
         type(MusicPlusDB) == "table" and "loaded" or "not loaded"))
+    Print(("Widget: %s, %s%s, size %d%%"):format(DB.widget and "on" or "off", DB.widgetLock and "locked" or "unlocked",
+        type(DB.widgetPos) == "table" and "" or " (default place)", math.floor((DB.widgetScale or 1) * 100 + 0.5))) -- 0.6.0
     Print(("Loop music: %s  Song titles in chat: %s"):format(DB.loop and "on" or ("off (" .. GAP_MIN .. "-" .. GAP_MAX .. " s silence between songs)"),
         DB.titles and "on" or "off"))
     Print("Leveling Zone Music: " .. POOL_LABELS[DB.pool] .. (DB.pool == "all" and
         (" (" .. #ALL_LEVELING_CUSTOMS .. " custom songs in leveling zones; cities unchanged)") or "")) -- 0.5.7
+    Print("Song Selection Mode: " .. SONGMODE_LABELS[DB.songMode] .. (DB.songMode == 2 and
+        " (no original tracks in any zone, capitals included; city intros still play if enabled)" or "")) -- 0.6.0
     if S.interrupted then Print("Song is interrupted (alt-tab?); retrying every " .. RETRY .. " s.") end
     if CVarGet("Sound_EnableMusic") == "0" then
         Print("|cffffff00Warning:|r game Music is off; MusicPlus plays on the Music channel, so turn Music on.")
@@ -2814,9 +3529,12 @@ local function Help()
     Print("/mplus bgsound - toggle \"Sound in Background\"   /mplus mode - switch music/sound playback   /mplus debug")
     Print("/mplus loop [on/off] - Loop music (off = 3-5 min silence between songs)   /mplus titles [on/off] - song titles in chat")
     Print("/mplus pool [zone/all] - Leveling Zone Music: this zone's custom songs only, or all leveling zones' (cities unchanged)")
+    Print("/mplus songs [classic/only] - Song Selection Mode: original tracks + MusicPlus songs, or MusicPlus songs only (all zones; city intros as set)")
     Print("/mplus zone [on/off] - MusicPlus on/off for the zone you're in (no argument = show)   /mplus zone clear - all zones on")
-    Print("/mplus zephras [on/off] - MusicPlus in Zephras Isle (off by default: Blizzard's scripted music plays there)")
+    Print("/mplus zephras [on/off] - MusicPlus in Zephras Isle (off by default: Blizzard gave it its own scripted soundtrack)")
     Print("/mplus intro [on/off] - city intro on arrival   /mplus intro test - play this city's intro now (no cooldown)")
+    Print("/mplus widget [on/off/lock/unlock/reset] - now-playing widget   /mplus widget scale 50-200 - its size (%)")
+    Print("/mplus prev - previous song")
     Print("/mplus welcome - open the options window (the welcome screen) again")
 end
 
@@ -2847,12 +3565,47 @@ SlashCmdList["MUSICPLUS"] = function(msg)
         StopTest()
     elseif cmd == "replay" then
         if S.track then RestartCurrent("/mplus replay") else Print("Not playing.") end
+    elseif cmd == "prev" or cmd == "previous" or cmd == "back" then -- 0.6.0 (the widget's Previous)
+        local did = PlayPrevious()
+        if not did then Print("Not playing.") elseif did == "restart" then Print("No earlier song in this zone yet; replaying this one.") end
+    elseif cmd == "widget" then -- 0.6.0
+        if rest == "lock" or rest == "unlock" then
+            SetWidgetLock(rest == "lock")
+            Print("Widget position " .. (DB.widgetLock and "locked." or "unlocked: drag the widget to move it."))
+        elseif rest:match("^scale") or rest:match("^size") then -- 0.6.0: /mplus widget scale 50-200
+            local n = tonumber(rest:match("^%a+%s*(%d+)%s*%%?$") or "")
+            if not n then
+                Print(("Widget size: %d%%. Usage: /mplus widget scale 50-200"):format(math.floor((DB.widgetScale or 1) * 100 + 0.5)))
+                return
+            end
+            SetWidgetScale(n / 100)
+            Print(("Widget size: %d%%."):format(math.floor(DB.widgetScale * 100 + 0.5)))
+        elseif rest == "reset" then
+            ResetWidget()
+            Print("Widget moved back to its default place (top center)." .. (DB.widget and "" or " It's hidden: /mplus widget on."))
+        else
+            local on = OnOffArg(rest, DB.widget)
+            if on == nil then Print("Usage: /mplus widget [on/off/lock/unlock/reset/scale 50-200]") return end
+            SetWidgetShown(on)
+            Print("Widget is now " .. (DB.widget and ("ON" .. (DB.enabled and "." or " (shown when MusicPlus is on).")) or "OFF."))
+        end
     elseif cmd == "debug" then
         S.debug = not S.debug; Print("Debug " .. (S.debug and "on." or "off."))
     elseif cmd == "bgsound" then
         SetBgSound(CVarGet(BG_CVAR) == "0")
         Print("Sound in Background is now " .. (CVarGet(BG_CVAR) ~= "0" and "ON." or "OFF."))
         RefreshUI()
+    elseif cmd == "songs" or cmd == "songmode" or (cmd == "mode" and (rest == "classic" or rest == "only")) then -- 0.6.0
+        local v = (rest == "classic" or rest == "1") and 1 or ((rest == "only" or rest == "2") and 2 or nil)
+        if rest == "" then
+            Print("Song Selection Mode: " .. SONGMODE_LABELS[DB.songMode] .. ". Usage: /mplus songs classic | only")
+            return
+        end
+        if not v then Print("Usage: /mplus songs classic | only") return end
+        SetSongMode(v)
+        Print("Song Selection Mode is now: " .. SONGMODE_LABELS[DB.songMode] .. (DB.songMode == 2 and
+            " (every zone, capitals too, plays only its MusicPlus songs, from the next song; city intros still play if enabled)." or
+            " (original zone tracks and MusicPlus songs, from the next song)."))
     elseif cmd == "mode" then
         local wasActive = S.active
         if S.testing then StopTest() end
@@ -2970,10 +3723,16 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
         if type(DB.loop) ~= "boolean" then DB.loop = true end       -- 0.5.1: Loop music, default ON
         if type(DB.titles) ~= "boolean" then DB.titles = false end  -- 0.5.1: song titles in chat, default OFF
         if DB.pool ~= "all" then DB.pool = "zone" end              -- 0.5.7: Leveling Zone Music, default this zone only
+        if DB.songMode ~= 2 then DB.songMode = 1 end               -- 0.6.0: Song Selection Mode, default 1 (classic + MusicPlus)
         if type(DB.disabledZones) ~= "table" then DB.disabledZones = {} end -- 0.5.9: zone title -> true
         if type(DB.disableZephras) ~= "boolean" then DB.disableZephras = true end -- 0.5.18: Zephras Isle off by default
         if type(DB.intros) ~= "boolean" then DB.intros = true end            -- 0.5.18: city intros, default ON
         if type(DB.introPlayed) ~= "table" then DB.introPlayed = {} end      -- 0.5.18: zone key -> time()
+        if type(DB.widget) ~= "boolean" then DB.widget = false end           -- 0.6.0: now-playing widget, default OFF
+        if type(DB.widgetLock) ~= "boolean" then DB.widgetLock = false end   -- 0.6.0: widget position lock, default off
+        if DB.widgetPos ~= nil and type(DB.widgetPos) ~= "table" then DB.widgetPos = nil end -- 0.6.0: { point, relPoint, x, y }
+        if type(DB.widgetScale) ~= "number" or DB.widgetScale < 0.5 or DB.widgetScale > 2 then DB.widgetScale = 1 end -- 0.6.0
+        if DB.optTab ~= 2 and DB.optTab ~= 3 then DB.optTab = 1 end         -- 0.6.0: last options tab, default General
         if type(DB.fadeVolume) == "string" and tonumber(DB.fadeVolume) and tonumber(DB.fadeVolume) > 0 then
             PutVolumeBack(DB.fadeVolume) -- the client stopped mid-fade last time: put the volume back
             Print("Music volume restored to " .. math.floor(tonumber(DB.fadeVolume or CVarGet(VOL_CVAR)) * 100 + 0.5) .. "% (a fade-out was interrupted).")
@@ -2992,6 +3751,7 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
         end
         do local v = tonumber(CVarGet(VOL_CVAR) or "") if v and v > 0 then DB.lastVolume = CVarGet(VOL_CVAR) end end
         pcall(RegisterSettingsPanel)
+        pcall(UpdateWidget) -- 0.6.0
         StartPositionPoll()
     elseif event == "CVAR_UPDATE" then
         -- remember changes made in Blizzard's Settings too (arg1 = CVar name, arg2 = value)
@@ -3040,4 +3800,4 @@ f:SetScript("OnUpdate", function()
     lastFrame = now
 end)
 
-Print("v0.5.19 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
+Print("v0.6.0 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")

@@ -2,6 +2,16 @@
 
 All notable changes to MusicPlus. Versions are for WoW Forever 1.60.1 (Interface 16001).
 
+## 0.6.0
+
+Changes since 0.5.19:
+
+- New **Song Selection Mode** option (Music page): "Classic Tracks and MusicPlus" (default, as before) or "MusicPlus Tracks Only", which plays only the MusicPlus songs in every zone, the 6 capitals included. City intros still play if enabled. Also `/mplus songs classic` / `only`.
+- New optional **now-playing widget** (off by default): a small movable bar with the MusicPlus logo, the current song and Previous / Replay / Skip buttons, plus Lock, Reset position and a Widget size slider (50–200%). Also `/mplus widget` and `/mplus prev`.
+- The `/mplus` window now has pages (General, Music, Widget) in a left navigation column, under the "Welcome to MusicPlus" header with a Now Playing line and a Skip button. Every option keeps its full description.
+- Fix: the Music volume slider now shows in WoW Forever.
+- MusicPlus logo in the AddOns list.
+
 ## 0.5.19
 
 Changes since 0.5.18:
