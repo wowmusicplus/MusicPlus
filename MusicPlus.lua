@@ -1,4 +1,8 @@
---[[ MusicPlus 0.6.0 (25 zones: 6 capitals and 19 zones, Alliance and Horde, levels 1-45, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+--[[ MusicPlus 0.6.1 (34 zones: 6 capitals and 28 zones, Alliance and Horde, levels 1-50, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+0.6.1: new zone music for 10 leveling zones (data only, no code changes): 9 new zones in ZONES / ZONE_ORDER, each with its
+game originals (same kits as the game) and 6 new custom songs: Thousand Needles, Arathi Highlands, Desolace, Alterac
+Mountains, Dustwallow Marsh, Swamp of Sorrows, Badlands, Feralas, Tanaris; Stranglethorn Vale's 6 customs replaced
+(STV redo). Inn spots for the Shadowprey hut, Theramore inn and ships, the Zul'Farrak troll den (MAP_YARDS 1443/66, 1445/70, 1446).
 0.6.0: "Song Selection Mode" under Leveling Zone Music (window dropdown, /mplus songs classic|only; MusicPlusDB.songMode,
 default 1). 1 = "Classic Tracks and MusicPlus" = exactly 0.5.19. 2 = "MusicPlus Tracks Only": every zone's rotation, the
 capitals' too, has no original (Blizzard) tracks, only its custom songs (leveling zones with Leveling Zone Music = "all":
@@ -70,7 +74,7 @@ Ashenvale, Starlight Over UnGoro -> Twilight Beyond UnGoro (lengths from ffprobe
    rule; walking out of one into a playing zone starts that zone at once (nothing was playing). Inns are unchanged (a
    disabled zone is quiet anyway). Flights: the zone below is still ignored; if the zone the flight plays for (the
    takeoff zone) is disabled mid-flight, or a /reload mid-flight would resume a disabled zone, MusicPlus fades out /
-   stays off for the rest of the flight. Leveling Zone Music "all": other leveling zones still mix all 114 custom songs
+   stays off for the rest of the flight. Leveling Zone Music "all": other leveling zones still mix all 168 custom songs
    (a disabled zone's songs included: only the zone itself is affected); cities are unchanged.
  * /mplus zone [on/off] (no argument: show this zone's state and the disabled zones), /mplus zone clear (re-enable
    every zone); in /mplus help. /mplus status shows "This zone: <zone> - MusicPlus on/OFF here" and the disabled zones.
@@ -84,7 +88,7 @@ Ashenvale, Starlight Over UnGoro -> Twilight Beyond UnGoro (lengths from ffprobe
    Thendal Village, Shrine of Akir and Shadowgale Forest (24 tracks, 32-159 s), played first, shuffled, as everywhere.
    Not included: the Valanaar intro stinger (ZoneIntroMusic 1687) and the cave music (kit 204).
  * 6 custom songs in "Zephras Isle\" (lengths measured with ffprobe). A leveling zone, so its customs join the
-   "Play music from all zones" pool: 19 leveling zones x 6 = 114 songs. No tavern music anywhere on the isle
+   "Play music from all zones" pool: 28 leveling zones x 6 = 168 songs (0.6.1). No tavern music anywhere on the isle
    (Windshaper Lodge and High Order Lodge use the area's music), so no inns. Nothing else changed.
 0.5.7: one window and a "Leveling Zone Music" setting (music timing, inns, fades, flights and zone detection unchanged).
  * The welcome window and the options window are now ONE window (MusicPlusOptionsFrame, title "MusicPlus 0.5.7"):
@@ -135,7 +139,7 @@ Ashenvale, Starlight Over UnGoro -> Twilight Beyond UnGoro (lengths from ffprobe
  * "Loop music" (default ON = exactly the 0.5.0 behavior: the next track starts the moment one ends). OFF = like the
    game's own zone music with its Loop Music setting (CVar Sound_ZoneMusicNoDelay, never touched by MusicPlus) off:
    a track, then GAP_MIN-GAP_MAX s of silence, then the next track. The range is the ZoneMusic table's
-   SilenceIntervalMin/Max (180000/300000 ms, day and night) of every zone-music set our 25 zones use (Forever
+   SilenceIntervalMin/Max (180000/300000 ms, day and night) of every zone-music set our 34 zones use (Forever
    1.60.1.70094 and Classic Era 1.15.9, wago.tools), so it's one range for all zones. PlayMusic LOOPS, so a track
    never "just ends" (it would start over), and StopMusic() hands the Music channel back to the game (its zone music
    returns). So during the gap MusicPlus stays the PlayMusic owner with a silent placeholder, PlayMusic(SILENCE_FILE)
@@ -1070,12 +1074,12 @@ local ZONES = {
         },
         -- Suno songs; lengths from ffprobe
         customs = {
-            { file = "Stranglethorn Vale\\Echoes of the Gurubashi.mp3",          len = 179.76, name = "Echoes of the Gurubashi", display = "Echoes of the Gurubashi" },
-            { file = "Stranglethorn Vale\\The Green Hills of Stranglethorn.mp3", len = 198.67, name = "The Green Hills of Stranglethorn", display = "The Green Hills of Stranglethorn" },
-            { file = "Stranglethorn Vale\\Riggle Bassbaits Tournament.mp3",      len = 180.02, name = "Riggle Bassbaits Tournament", display = "Riggle Bassbait's Tournament" },
-            { file = "Stranglethorn Vale\\Saving Yenniku.mp3",                   len = 180.00, name = "Saving Yenniku", display = "Saving Yenniku" },
-            { file = "Stranglethorn Vale\\Hakkar Sleeps in ZulGurub.mp3",        len = 179.90, name = "Hakkar Sleeps in ZulGurub", display = "Hakkar Sleeps in Zul'Gurub" },
-            { file = "Stranglethorn Vale\\Stranglethorn Fever.mp3",              len = 179.90, name = "Stranglethorn Fever", display = "Stranglethorn Fever" },
+            { file = "Stranglethorn Vale\\Eyes in the Canopy.mp3",          len = 179.64, name = "Eyes in the Canopy", display = "Eyes in the Canopy" },
+            { file = "Stranglethorn Vale\\Bloodscalp Ritual Grounds.mp3",   len = 188.18, name = "Bloodscalp Ritual Grounds", display = "Bloodscalp Ritual Grounds" },
+            { file = "Stranglethorn Vale\\Skullsplitter Drums at Dusk.mp3", len = 188.71, name = "Skullsplitter Drums at Dusk", display = "Skullsplitter Drums at Dusk" },
+            { file = "Stranglethorn Vale\\Temple of the Blood God.mp3",     len = 194.18, name = "Temple of the Blood God", display = "Temple of the Blood God" },
+            { file = "Stranglethorn Vale\\Raptor Grounds.mp3",              len = 179.64, name = "Raptor Grounds", display = "Raptor Grounds" },
+            { file = "Stranglethorn Vale\\Ballal Ruins Whisper.mp3",        len = 182.88, name = "Ballal Ruins Whisper", display = "Bal'lal Ruins Whisper" },
         },
         -- Subzone fallbacks: "The Salty Sailor Tavern" / "The Salty Sailor" (named rows of the Booty Bay WMO 21064).
         -- Grom'gol inn (orczeppelinhouse WMO 3113) has no tavern music.
@@ -1092,6 +1096,294 @@ local ZONES = {
         },
         -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
         zoneMusic = { 8181259, 8181261, 8181263, 8181265, 8181267, 8181269, 53541, 53542, 53543, 53544, 53545, 53546 },
+    },
+    ["thousand-needles"] = {
+        title = "Thousand Needles",
+        -- 0.6.1. 1441 = Thousand Needles (Forever/classic-era, area 400), 64 = retail (same bounds).
+        mapIDs = { 1441, 64 },
+        names = { "Thousand Needles" },
+        -- ZoneMusic 9 "Zone-Plains": SoundKits 2528 (day) + 2538 (night). Same kit as Durotar, Mulgore, Westfall.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53680, len = 53.76, name = "Day Plains 1" },
+            { id = 53681, len = 76.54, name = "Day Plains 2" },
+            { id = 53682, len = 58.38, name = "Night Plains 1" },
+            { id = 53683, len = 68.62, name = "Night Plains 2" },
+        },
+        -- Suno songs; lengths from ffprobe
+        customs = {
+            { file = "Thousand Needles\\Galak Encampment Smoke.mp3",       len = 189.72, name = "Galak Encampment Smoke", display = "Galak Encampment Smoke" },
+            { file = "Thousand Needles\\Darkcloud Pinnacle Starlight.mp3", len = 182.95, name = "Darkcloud Pinnacle Starlight", display = "Darkcloud Pinnacle Starlight" },
+            { file = "Thousand Needles\\Salt Flats Silence.mp3",           len = 193.22, name = "Salt Flats Silence", display = "Salt Flats Silence" },
+            { file = "Thousand Needles\\Spires at Dusk.mp3",               len = 199.82, name = "Spires at Dusk", display = "Spires at Dusk" },
+            { file = "Thousand Needles\\Shimmering Flats.mp3",             len = 203.52, name = "Shimmering Flats", display = "Shimmering Flats" },
+            { file = "Thousand Needles\\Freewind Night Fire.mp3",          len = 193.34, name = "Freewind Night Fire", display = "Freewind Night Fire" },
+        },
+        -- No tavern music in Thousand Needles (Freewind Post inn has none).
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181305, 8181307, 8181309, 8181311, 53680, 53681, 53682, 53683 },
+    },
+
+    ["arathi-highlands"] = {
+        title = "Arathi Highlands",
+        -- 0.6.1. 1417 = Arathi Highlands (Forever/classic-era, area 45), 14 = retail (different bounds).
+        mapIDs = { 1417, 14 },
+        names = { "Arathi Highlands" },
+        -- ZoneMusic 8 "Zone-Mountain": SoundKits 2527 (day) + 2537 (night), 7 files. Same kit as Dun Morogh.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53577, len = 120.12, name = "Day Mountain 1" },
+            { id = 53578, len = 66.99, name = "Day Mountain 2" },
+            { id = 53579, len = 80.31, name = "Day Mountain 3" },
+            { id = 53580, len = 64.34, name = "Night Mountain 1" },
+            { id = 53581, len = 63.03, name = "Night Mountain 2" },
+            { id = 53582, len = 69.17, name = "Night Mountain 3" },
+            { id = 53583, len = 63.97, name = "Night Mountain 4" },
+        },
+        -- Suno songs; lengths from ffprobe
+        customs = {
+            { file = "Arathi Highlands\\Stromgardes Broken Crown.mp3",   len = 181.22, name = "Stromgardes Broken Crown", display = "Stromgarde's Broken Crown" },
+            { file = "Arathi Highlands\\Wind Over Thoradins Wall.mp3",   len = 189.84, name = "Wind Over Thoradins Wall", display = "Wind Over Thoradin's Wall" },
+            { file = "Arathi Highlands\\Hammerfall Banners at Dusk.mp3", len = 181.51, name = "Hammerfall Banners at Dusk", display = "Hammerfall Banners at Dusk" },
+            { file = "Arathi Highlands\\Circle of East Binding.mp3",     len = 179.78, name = "Circle of East Binding", display = "Circle of East Binding" },
+            { file = "Arathi Highlands\\Last Banner.mp3",                len = 193.99, name = "Last Banner", display = "Last Banner" },
+            { file = "Arathi Highlands\\Refuge Pointe Watchfire.mp3",    len = 181.75, name = "Refuge Pointe Watchfire", display = "Refuge Pointe Watchfire" },
+        },
+        -- No tavern music in Arathi Highlands (Hammerfall / Refuge Pointe have none).
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181287, 8181289, 8181291, 8181293, 8181295, 8181297, 8181299, 53577, 53578, 53579, 53580, 53581, 53582, 53583 },
+    },
+
+    ["desolace"] = {
+        title = "Desolace",
+        -- 0.6.1. 1443 = Desolace (Forever/classic-era, area 405), 66 = retail (same bounds).
+        mapIDs = { 1443, 66 },
+        names = { "Desolace" },
+        -- ZoneMusic 176 "Zone-Desert": SoundKits 4754 (day, 3 files) + 4755 (night, 3 files). Classic Era used 7 "Zone-BarrenDry"; Forever 1.60.1 plays Desert.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53432, len = 65.73, name = "Day Desert 1" },
+            { id = 53433, len = 81.04, name = "Day Desert 2" },
+            { id = 53434, len = 54.21, name = "Day Desert 3" },
+            { id = 53435, len = 77.70, name = "Night Desert 1" },
+            { id = 53436, len = 62.47, name = "Night Desert 2" },
+            { id = 53437, len = 57.74, name = "Night Desert 3" },
+        },
+        -- Suno songs; lengths from ffprobe
+        customs = {
+            { file = "Desolace\\Kodo Graveyard Bones.mp3",    len = 181.34, name = "Kodo Graveyard Bones", display = "Kodo Graveyard Bones" },
+            { file = "Desolace\\Mannoroc Coven Shadows.mp3",  len = 181.58, name = "Mannoroc Coven Shadows", display = "Mannoroc Coven Shadows" },
+            { file = "Desolace\\Maraudons Centaur Drums.mp3", len = 180.02, name = "Maraudons Centaur Drums", display = "Maraudon's Centaur Drums" },
+            { file = "Desolace\\Ranazjar Isle Undertow.mp3",  len = 199.99, name = "Ranazjar Isle Undertow", display = "Ranazjar Isle Undertow" },
+            { file = "Desolace\\Kolkar Village Ghosts.mp3",   len = 183.62, name = "Kolkar Village Ghosts", display = "Kolkar Village Ghosts" },
+            { file = "Desolace\\Valley of Spears Dust.mp3",   len = 193.58, name = "Valley of Spears Dust", display = "Valley of Spears Dust" },
+        },
+        -- Shadowprey Village itself (area 2408) plays Zone-TavernHorde outdoors too, like Sen'jin Village: a village, not a building,
+        -- so only the hut is a spot (add "Shadowprey Village" to inns to go quiet in the whole village).
+        -- Shadowprey Village hut (troll_hotel01, WMO 1198: TavernHorde, whole building): two circles fitted to its indoor group.
+        inns = {},
+        innSpots = {
+            { name = "Shadowprey Village hut", maps = { 1443, 66 }, x = 0.2440, y = 0.6808, r = 22 },
+            { name = "Shadowprey Village hut", maps = { 1443, 66 }, x = 0.2415, y = 0.6863, r = 23 },
+        },
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181127, 8181129, 8181131, 8181133, 8181135, 8181137, 53432, 53433, 53434, 53435, 53436, 53437 },
+    },
+
+    ["alterac-mountains"] = {
+        title = "Alterac Mountains",
+        -- 0.6.1. 1416 = Alterac Mountains (Forever/classic-era, area 36); no retail zone map.
+        mapIDs = { 1416 },
+        names = { "Alterac Mountains" },
+        -- ZoneMusic 1 "Zone-Forest": SoundKit 2523 (day and night), 3 files. Same kit as Hillsbrad and Elwynn.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53492, len = 55.69, name = "Day Forest 1" },
+            { id = 53493, len = 72.52, name = "Day Forest 2" },
+            { id = 53494, len = 64.71, name = "Day Forest 3" },
+        },
+        -- Suno songs; lengths from ffprobe
+        customs = {
+            { file = "Alterac Mountains\\Crushridge Ogre Hold.mp3",             len = 179.95, name = "Crushridge Ogre Hold", display = "Crushridge Ogre Hold" },
+            { file = "Alterac Mountains\\Syndicate Lanterns in Strahnbrad.mp3", len = 178.82, name = "Syndicate Lanterns in Strahnbrad", display = "Syndicate Lanterns in Strahnbrad" },
+            { file = "Alterac Mountains\\Chillwind Point Cold Moon.mp3",        len = 193.22, name = "Chillwind Point Cold Moon", display = "Chillwind Point Cold Moon" },
+            { file = "Alterac Mountains\\Beneath the Violet Dome.mp3",          len = 188.40, name = "Beneath the Violet Dome", display = "Beneath the Violet Dome" },
+            { file = "Alterac Mountains\\Kirin Tor Vigil.mp3",                  len = 193.10, name = "Kirin Tor Vigil", display = "Kirin Tor Vigil" },
+            { file = "Alterac Mountains\\Whispers in the Sewers.mp3",           len = 179.90, name = "Whispers in the Sewers", display = "Whispers in the Sewers" },
+        },
+        -- No tavern music in Alterac Mountains.
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8180778, 8180780, 8180782, 53492, 53493, 53494 },
+    },
+
+    ["dustwallow-marsh"] = {
+        title = "Dustwallow Marsh",
+        -- 0.6.1. 1445 = Dustwallow Marsh (Forever/classic-era, area 15), 70 = retail (same bounds). Theramore Isle is a subzone.
+        mapIDs = { 1445, 70 },
+        names = { "Dustwallow Marsh" },
+        -- ZoneMusic 227 "Zone-Soggy": SoundKits 7082 (day) + 6836 (night), 5 files. Same kit as Wetlands.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53695, len = 97.18, name = "Soggy Place 1" },
+            { id = 53696, len = 97.42, name = "Soggy Place 2" },
+            { id = 53697, len = 90.52, name = "Soggy Place 3" },
+            { id = 53698, len = 89.37, name = "Soggy Place 4" },
+            { id = 53699, len = 70.36, name = "Soggy Place 5" },
+        },
+        -- Suno songs; lengths from ffprobe
+        customs = {
+            { file = "Dustwallow Marsh\\Onyxias Shadow Over the Fen.mp3", len = 193.20, name = "Onyxias Shadow Over the Fen", display = "Onyxia's Shadow Over the Fen" },
+            { file = "Dustwallow Marsh\\The Drowned Reach.mp3",           len = 193.99, name = "The Drowned Reach", display = "The Drowned Reach" },
+            { file = "Dustwallow Marsh\\Black Morass Stillness.mp3",      len = 180.00, name = "Black Morass Stillness", display = "Black Morass Stillness" },
+            { file = "Dustwallow Marsh\\Fog Over the Den of Flame.mp3",   len = 202.82, name = "Fog Over the Den of Flame", display = "Fog Over the Den of Flame" },
+            { file = "Dustwallow Marsh\\Sunken Hut Silence.mp3",          len = 193.63, name = "Sunken Hut Silence", display = "Sunken Hut Silence" },
+            { file = "Dustwallow Marsh\\Where the Tidemoss Sleeps.mp3",   len = 192.00, name = "Where the Tidemoss Sleeps", display = "Where the Tidemoss Sleeps" },
+        },
+        -- Theramore inn (goldshireinn WMO 53 set 0: TavernAlliance) and the transportship_a hulls (WMO 909: TavernAlliance below deck):
+        -- two docked at Theramore, one offshore (The Great Sea). Circles fitted to the indoor groups (r050 pipeline, 1.60.1 ADTs).
+        inns = {},
+        innSpots = {
+            { name = "Theramore inn", maps = { 1445, 70 }, x = 0.6681, y = 0.4531, r = 19 },
+            { name = "Theramore inn", maps = { 1445, 70 }, x = 0.6633, y = 0.4533, r = 20 },
+            { name = "Theramore docked ship", maps = { 1445, 70 }, x = 0.6899, y = 0.5598, r = 23 },
+            { name = "Theramore docked ship", maps = { 1445, 70 }, x = 0.6781, y = 0.5868, r = 15 },
+            { name = "Theramore docked ship", maps = { 1445, 70 }, x = 0.6755, y = 0.5834, r = 17 },
+            { name = "Offshore ship", maps = { 1445, 70 }, x = 0.7698, y = 0.5619, r = 17 },
+            { name = "Offshore ship", maps = { 1445, 70 }, x = 0.7727, y = 0.5589, r = 16 },
+        },
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181011, 8181013, 8181015, 8181017, 8181019, 53695, 53696, 53697, 53698, 53699 },
+    },
+
+    ["swamp-of-sorrows"] = {
+        title = "Swamp of Sorrows",
+        -- 0.6.1. 1435 = Swamp of Sorrows (Forever/classic-era, area 8), 51 = retail (different bounds).
+        mapIDs = { 1435, 51 },
+        names = { "Swamp of Sorrows" },
+        -- ZoneMusic 223 "Zone-Soggy Swamp": SoundKit 6836 (day and night), 3 files (3 of the Wetlands 5).
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53695, len = 97.18, name = "Soggy Place 1" },
+            { id = 53697, len = 90.52, name = "Soggy Place 3" },
+            { id = 53698, len = 89.37, name = "Soggy Place 4" },
+        },
+        -- Suno songs; lengths from ffprobe
+        customs = {
+            { file = "Swamp of Sorrows\\The Sunken Temple Mire.mp3", len = 179.66, name = "The Sunken Temple Mire", display = "The Sunken Temple Mire" },
+            { file = "Swamp of Sorrows\\Misty Reed Strand.mp3",      len = 192.98, name = "Misty Reed Strand", display = "Misty Reed Strand" },
+            { file = "Swamp of Sorrows\\Fallow Sanctuary.mp3",       len = 179.88, name = "Fallow Sanctuary", display = "Fallow Sanctuary" },
+            { file = "Swamp of Sorrows\\Splinterspear Silence.mp3",  len = 192.84, name = "Splinterspear Silence", display = "Splinterspear Silence" },
+            { file = "Swamp of Sorrows\\Harborage in the Fog.mp3",   len = 204.24, name = "Harborage in the Fog", display = "Harborage in the Fog" },
+            { file = "Swamp of Sorrows\\Pool of Tears.mp3",          len = 193.22, name = "Pool of Tears", display = "Pool of Tears" },
+        },
+        -- No tavern music in Swamp of Sorrows (Stonard inn has none).
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181011, 8181015, 8181017, 53695, 53697, 53698 },
+    },
+
+    ["badlands"] = {
+        title = "Badlands",
+        -- 0.6.1. 1418 = Badlands (Forever/classic-era, area 3), 15 = retail (different bounds).
+        mapIDs = { 1418, 15 },
+        names = { "Badlands" },
+        -- ZoneMusic 7 "Zone-BarrenDry": SoundKit 2536 (day and night), 6 files. Same kit as The Barrens.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53299, len = 64.14, name = "Day Barrens 1" },
+            { id = 53300, len = 64.19, name = "Day Barrens 2" },
+            { id = 53301, len = 55.36, name = "Day Barrens 3" },
+            { id = 53302, len = 67.40, name = "Night Barrens 1" },
+            { id = 53303, len = 40.92, name = "Night Barrens 2" },
+            { id = 53304, len = 47.47, name = "Night Barrens 3" },
+        },
+        -- Suno songs; lengths from ffprobe
+        customs = {
+            { file = "Badlands\\Bones of the Dragonmaw.mp3", len = 189.62, name = "Bones of the Dragonmaw", display = "Bones of the Dragonmaw" },
+            { file = "Badlands\\Kargath Dust.mp3",           len = 199.63, name = "Kargath Dust", display = "Kargath Dust" },
+            { file = "Badlands\\Lethlor Ravine Wind.mp3",    len = 203.64, name = "Lethlor Ravine Wind", display = "Lethlor Ravine Wind" },
+            { file = "Badlands\\Shadowforge Smoke.mp3",      len = 192.62, name = "Shadowforge Smoke", display = "Shadowforge Smoke" },
+            { file = "Badlands\\Dragonmaw Grave.mp3",        len = 194.04, name = "Dragonmaw Grave", display = "Dragonmaw Grave" },
+            { file = "Badlands\\Valley of Fangs.mp3",        len = 199.22, name = "Valley of Fangs", display = "Valley of Fangs" },
+        },
+        -- No tavern music in the Badlands.
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181049, 8181051, 8181053, 8181055, 8181057, 8181059, 53299, 53300, 53301, 53302, 53303, 53304 },
+    },
+
+    ["feralas"] = {
+        title = "Feralas",
+        -- 0.6.1. 1444 = Feralas (Forever/classic-era, area 357), 69 = retail (same bounds).
+        mapIDs = { 1444, 69 },
+        names = { "Feralas" },
+        -- ZoneMusic 3 "Zone-Jungle": SoundKits 2535 (day) + 5494 (night), same 6 files. Same kit as Stranglethorn Vale.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53541, len = 46.13, name = "Day Jungle 1" },
+            { id = 53542, len = 98.72, name = "Day Jungle 2" },
+            { id = 53543, len = 48.27, name = "Day Jungle 3" },
+            { id = 53544, len = 54.67, name = "Night Jungle 1" },
+            { id = 53545, len = 53.37, name = "Night Jungle 2" },
+            { id = 53546, len = 89.13, name = "Night Jungle 3" },
+        },
+        -- Suno songs; lengths from ffprobe
+        customs = {
+            { file = "Feralas\\Twin Colossals at Dawn.mp3",   len = 188.23, name = "Twin Colossals at Dawn", display = "Twin Colossals at Dawn" },
+            { file = "Feralas\\EldreThalas Silent Halls.mp3", len = 180.02, name = "EldreThalas Silent Halls", display = "Eldre'Thalas Silent Halls" },
+            { file = "Feralas\\Dire Maul Moonlight.mp3",      len = 193.58, name = "Dire Maul Moonlight", display = "Dire Maul Moonlight" },
+            { file = "Feralas\\Moonshade Grove.mp3",          len = 198.79, name = "Moonshade Grove", display = "Moonshade Grove" },
+            { file = "Feralas\\Stones of the Ancients.mp3",   len = 182.78, name = "Stones of the Ancients", display = "Stones of the Ancients" },
+            { file = "Feralas\\Feathermoon Vigil.mp3",        len = 204.02, name = "Feathermoon Vigil", display = "Feathermoon Vigil" },
+        },
+        -- No tavern music in Feralas (Camp Mojache / Feathermoon inns have none).
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181259, 8181261, 8181263, 8181265, 8181267, 8181269, 53541, 53542, 53543, 53544, 53545, 53546 },
+    },
+
+    ["tanaris"] = {
+        title = "Tanaris",
+        -- 0.6.1. 1446 = Tanaris (Forever/classic-era, area 440), 71 = retail (different bounds). Gadgetzan is a subzone.
+        mapIDs = { 1446, 71 },
+        names = { "Tanaris" },
+        -- ZoneMusic 176 "Zone-Desert": SoundKits 4754 (day, 3 files) + 4755 (night, 3 files).
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53432, len = 65.73, name = "Day Desert 1" },
+            { id = 53433, len = 81.04, name = "Day Desert 2" },
+            { id = 53434, len = 54.21, name = "Day Desert 3" },
+            { id = 53435, len = 77.70, name = "Night Desert 1" },
+            { id = 53436, len = 62.47, name = "Night Desert 2" },
+            { id = 53437, len = 57.74, name = "Night Desert 3" },
+        },
+        -- Suno songs; lengths from ffprobe
+        customs = {
+            { file = "Tanaris\\Sandsorrow Watch.mp3",       len = 189.96, name = "Sandsorrow Watch", display = "Sandsorrow Watch" },
+            { file = "Tanaris\\ZulFarrak Sand Trolls.mp3",  len = 180.02, name = "ZulFarrak Sand Trolls", display = "Zul'Farrak Sand Trolls" },
+            { file = "Tanaris\\ZulFarrak Shadows.mp3",      len = 198.00, name = "ZulFarrak Shadows", display = "Zul'Farrak Shadows" },
+            { file = "Tanaris\\Valley of the Watchers.mp3", len = 180.00, name = "Valley of the Watchers", display = "Valley of the Watchers" },
+            { file = "Tanaris\\Sandsorrow Hollow.mp3",      len = 204.17, name = "Sandsorrow Hollow", display = "Sandsorrow Hollow" },
+            { file = "Tanaris\\Eastmoon Ruins at Dusk.mp3", len = 203.23, name = "Eastmoon Ruins at Dusk", display = "Eastmoon Ruins at Dusk" },
+        },
+        -- Gadgetzan inn has no tavern music. Zul'Farrak troll den (md_trollden_warm WMO 1183: TavernHorde, outside Zul'Farrak)
+        -- and an offshore transportship_a hull (WMO 909, South Seas): circles fitted to the indoor groups. 1446 only.
+        inns = {},
+        innSpots = {
+            { name = "Zul'Farrak troll den", maps = { 1446 }, x = 0.4114, y = 0.0679, r = 21 },
+            { name = "Offshore ship", maps = { 1446 }, x = 0.7530, y = 0.2616, r = 23 },
+        },
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181127, 8181129, 8181131, 8181133, 8181135, 8181137, 53432, 53433, 53434, 53435, 53436, 53437 },
     },
     ["zephras-isle"] = {
         title = "Zephras Isle",
@@ -1158,6 +1450,8 @@ local ZONE_ORDER = {
     "westfall", "loch-modan", "darkshore", "silverpine-forest", "barrens",                      -- 10-25
     "redridge-mountains", "stonetalon-mountains", "duskwood", "ashenvale",                     -- 15-30
     "wetlands", "hillsbrad-foothills", "stranglethorn-vale",                                     -- 20-45
+    "thousand-needles", "arathi-highlands", "desolace", "alterac-mountains",                    -- 25-40 (0.6.1)
+    "dustwallow-marsh", "swamp-of-sorrows", "badlands", "feralas", "tanaris",                   -- 30-50 (0.6.1)
     "zephras-isle",                                                                              -- 1-12, Skyborne (0.5.8)
 }
 
@@ -1238,6 +1532,9 @@ local MAP_YARDS = {
     [1437] = { 4135.42, 2756.25 }, [56] = { 4135.42, 2756.25 },   -- Wetlands
     [1424] = { 3200.00, 2133.33 },                                -- Hillsbrad Foothills
     [1434] = { 6381.25, 4254.17 },                                -- Stranglethorn Vale
+    [1443] = { 4495.83, 2997.92 }, [66] = { 4495.83, 2997.92 },   -- Desolace (0.6.1)
+    [1445] = { 5250.00, 3500.00 }, [70] = { 5250.00, 3500.00 },   -- Dustwallow Marsh (0.6.1)
+    [1446] = { 6900.00, 4600.00 },                                -- Tanaris (0.6.1)
 }
 local SAVED_SPOT_RADIUS = 12 -- yards, for spots saved with /mplus inn
 local POLL_INN = 0.5         -- seconds between position checks
@@ -2416,7 +2713,11 @@ local function SetPool(value)
     value = (value == "all") and "all" or "zone"
     local changed = DB.pool ~= value
     DB.pool = value
-    if changed and S.active and not S.testing and S.zone and not S.zone.city and S.rotation then RebuildPool() end
+    if changed and S.active and not S.testing and S.zone and not S.zone.city and S.rotation then
+        -- 0.6.1: changing Leveling Zone Music starts a fresh round right away, at its custom songs
+        StopCurrent(0, true); BuildRotation(S.zone)
+        PlayIndex((S.nCustom > 0) and (S.nOrig + 1) or 1)
+    end
     RefreshUI()
 end
 
@@ -3305,7 +3606,7 @@ local function BuildOptionsNav(f)
 end
 
 local function CreateOptionsWindow()
-    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.6.0")
+    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.6.1")
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, relPoint, px, py = self:GetPoint()
@@ -3800,4 +4101,4 @@ f:SetScript("OnUpdate", function()
     lastFrame = now
 end)
 
-Print("v0.6.0 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
+Print("v0.6.1 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")

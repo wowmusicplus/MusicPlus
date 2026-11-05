@@ -2,6 +2,16 @@
 
 All notable changes to MusicPlus. Versions are for WoW Forever 1.60.1 (Interface 16001).
 
+## 0.6.1
+
+Changes since 0.6.0:
+
+- New music for 9 more leveling zones (levels 25–50), 6 songs each: Thousand Needles, Arathi Highlands, Desolace, Alterac Mountains, Dustwallow Marsh, Swamp of Sorrows, Badlands, Feralas and Tanaris.
+- Stranglethorn Vale redo: all 6 songs replaced with new ones.
+- Tavern music keeps playing in the new zones' inns: Shadowprey Village hut (Desolace), Theramore inn and ships (Dustwallow Marsh), the Zul'Farrak troll den (Tanaris).
+- 34 zones in total; "Play music from all zones" now covers 28 leveling zones (168 songs).
+- Changing Leveling Zone Music now starts the rotation fresh at the custom songs.
+
 ## 0.6.0
 
 Changes since 0.5.19:
