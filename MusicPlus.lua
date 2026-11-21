@@ -1,4 +1,18 @@
---[[ MusicPlus 0.6.1 (34 zones: 6 capitals and 28 zones, Alliance and Horde, levels 1-50, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+--[[ MusicPlus 0.6.2 (47 zones: 6 capitals and 41 zones, Alliance and Horde, levels 1-60, plus the Skyborne starting zone) for WoW: Forever 1.60.1 (Interface 16001)
+0.6.2: 13 more leveling zones that reuse an existing zone's 6 custom songs (same files, not copied):
+Eastern Plaguelands (Duskwood), Western Plaguelands (Tirisfal Glades), Felwood (Teldrassil),
+Burning Steppes (Durotar), Azshara (Elwynn Forest), Moonglade (Zephras Isle; plays even when Zephras is off),
+Un'Goro Crater (Stranglethorn Vale v2), Winterspring (Darkshore), Silithus (Westfall), Searing Gorge (The Barrens),
+Deadwind Pass (Desolace), The Hinterlands (Dustwallow Marsh), Blasted Lands (Badlands). Each has its own
+game originals (same kits as Forever 1.60.1). Inn spots for the Revantusk Village hut (MAP_YARDS 1425/26).
+The all-zones custom pool stays 168 unique songs (reused files are not added a second time).
+0.6.2 also: "Track Order" under Song Selection Mode on the /mplus Music page (MusicPlusDB.trackOrder,
+default "first"; /mplus order first|interlace). Shown when Song Selection Mode is "Classic Tracks and
+MusicPlus", greyed out for "MusicPlus Tracks Only". "Classic tracks first" is today's rotation (all
+classics, then all MusicPlus songs). "Interlace" alternates classic and MusicPlus, starting with a
+classic track; if one kind runs out, the rest of the other kind finish the round. Changing it starts
+a fresh round right away. A zone with no classic tracks (or no MusicPlus songs) just plays the other
+kind. Works in capitals, leveling zones, the all-zones pool and the 13 reuse zones.
 0.6.1: new zone music for 10 leveling zones (data only, no code changes): 9 new zones in ZONES / ZONE_ORDER, each with its
 game originals (same kits as the game) and 6 new custom songs: Thousand Needles, Arathi Highlands, Desolace, Alterac
 Mountains, Dustwallow Marsh, Swamp of Sorrows, Badlands, Feralas, Tanaris; Stranglethorn Vale's 6 customs replaced
@@ -253,6 +267,8 @@ local PROMPT_WINDOW = 5     -- s after PLAYER_ENTERING_WORLD / landing in which 
 --              name = the file name without .mp3 (no apostrophes: Windows-safe); display = the title shown in game,
 --              with its punctuation (0.5.12). Shown: display, else name, else the file name.
 --              (an entry without a positive numeric len is ignored, so a typo can't break the timer)
+--   customsFrom key of another zone (optional): after load, customTracks is that zone's list (same files,
+--              not copied). The source zone's disable / default-off settings do not apply here.
 --   inns       subzone names (enUS) where the addon stays quiet so the game's inn music plays
 --   innSpots   { name, maps = { uiMapIDs }, x, y (0-1 map coords), r = radius in yards } - quiet there
 --              while IsIndoors() is true (for inns that have no subzone of their own)
@@ -1385,6 +1401,299 @@ local ZONES = {
         -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
         zoneMusic = { 8181127, 8181129, 8181131, 8181133, 8181135, 8181137, 53432, 53433, 53434, 53435, 53436, 53437 },
     },
+    ["the-hinterlands"] = {
+        title = "The Hinterlands",
+        -- 0.6.2. 1425 = The Hinterlands (Forever/classic-era, area 47), 26 = retail (same bounds).
+        mapIDs = { 1425, 26 },
+        names = { "The Hinterlands" },
+        -- ZoneMusic 1 "Zone-Forest": SoundKit 2523 (day and night), 3 files. Same kit as Hillsbrad and Elwynn.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53492, len = 55.69, name = "Day Forest 1" },
+            { id = 53493, len = 72.52, name = "Day Forest 2" },
+            { id = 53494, len = 64.71, name = "Day Forest 3" },
+        },
+        -- 0.6.2: reuse Dustwallow Marsh's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "dustwallow-marsh",
+        customs = {},
+        -- Revantusk Village itself (area 3317) has no zone music of its own.
+        -- Revantusk Village hut (troll_hotel01, WMO 1198: TavernHorde, whole building): two circles fitted to its indoor group (r050 pipeline, 1.60.1 ADTs).
+        inns = {},
+        innSpots = {
+            { name = "Revantusk Village hut", maps = { 1425, 26 }, x = 0.7845, y = 0.8141, r = 23 },
+            { name = "Revantusk Village hut", maps = { 1425, 26 }, x = 0.7809, y = 0.8086, r = 23 },
+        },
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8180778, 8180780, 8180782, 53492, 53493, 53494 },
+    },
+    ["searing-gorge"] = {
+        title = "Searing Gorge",
+        -- 0.6.2. 1427 = Searing Gorge (Forever/classic-era, area 51), 32 = retail (same bounds).
+        mapIDs = { 1427, 32 },
+        names = { "Searing Gorge" },
+        -- ZoneMusic 10 "Zone-Volcanic": SoundKits 2529 (day) + 2539 (night), 4 files.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53812, len = 72.88, name = "Day Volcanic 1" },
+            { id = 53813, len = 87.33, name = "Day Volcanic 2" },
+            { id = 53814, len = 71.21, name = "Night Volcanic 1" },
+            { id = 53815, len = 64.42, name = "Night Volcanic 2" },
+        },
+        -- 0.6.2: reuse The Barrens's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "barrens",
+        customs = {},
+        -- No tavern music in Searing Gorge.
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181275, 8181277, 8181279, 8181281, 53812, 53813, 53814, 53815 },
+    },
+    ["blasted-lands"] = {
+        title = "Blasted Lands",
+        -- 0.6.2. 1419 = Blasted Lands (Forever/classic-era, area 4), 17 = retail (different bounds).
+        mapIDs = { 1419, 17 },
+        names = { "Blasted Lands" },
+        -- ZoneMusic 7 "Zone-BarrenDry": SoundKit 2536 (day and night), 6 files. Same kit as The Barrens.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53299, len = 64.14, name = "Day Barrens 1" },
+            { id = 53300, len = 64.19, name = "Day Barrens 2" },
+            { id = 53301, len = 55.36, name = "Day Barrens 3" },
+            { id = 53302, len = 67.40, name = "Night Barrens 1" },
+            { id = 53303, len = 40.92, name = "Night Barrens 2" },
+            { id = 53304, len = 47.47, name = "Night Barrens 3" },
+        },
+        -- 0.6.2: reuse Badlands's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "badlands",
+        customs = {},
+        -- No tavern music in the Blasted Lands.
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181049, 8181051, 8181053, 8181055, 8181057, 8181059, 53299, 53300, 53301, 53302, 53303, 53304 },
+    },
+    ["azshara"] = {
+        title = "Azshara",
+        -- 0.6.2. 1447 = Azshara (Forever/classic-era, area 16), 76 = retail (different bounds).
+        mapIDs = { 1447, 76 },
+        names = { "Azshara" },
+        -- ZoneMusic 205 "Zone-Plaguelands": SoundKit 6066 (day and night), 3 files (cursedland04-06).
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53429, len = 79.32, name = "Cursed Land 4" },
+            { id = 53430, len = 82.48, name = "Cursed Land 5" },
+            { id = 53431, len = 74.17, name = "Cursed Land 6" },
+        },
+        -- 0.6.2: reuse Elwynn Forest's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "elwynn",
+        customs = {},
+        -- No tavern music in Azshara.
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8180744, 8180746, 8180748, 53429, 53430, 53431 },
+    },
+    ["felwood"] = {
+        title = "Felwood",
+        -- 0.6.2. 1448 = Felwood (Forever/classic-era, area 361), 77 = retail (different bounds).
+        mapIDs = { 1448, 77 },
+        names = { "Felwood" },
+        -- ZoneMusic 193 "Zone-CursedLand Felwood": SoundKit 5455 (day and night), 2 files (cursedland01 and cursedland03).
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53426, len = 54.79, name = "Cursed Land 1" },
+            { id = 53428, len = 64.32, name = "Cursed Land 3" },
+        },
+        -- 0.6.2: reuse Teldrassil's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "teldrassil",
+        customs = {},
+        -- No tavern music in Felwood.
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8180738, 8180742, 53426, 53428 },
+    },
+    ["un-goro-crater"] = {
+        title = "Un'Goro Crater",
+        -- 0.6.2. 1449 = Un'Goro Crater (Forever/classic-era, area 490), 78 = retail (same bounds).
+        mapIDs = { 1449, 78 },
+        names = { "Un'Goro Crater" },
+        -- ZoneMusic 223 "Zone-Soggy Swamp": SoundKit 6836 (day and night), 3 files (3 of the Wetlands 5). Same kit as Swamp of Sorrows.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53695, len = 97.18, name = "Soggy Place 1" },
+            { id = 53697, len = 90.52, name = "Soggy Place 3" },
+            { id = 53698, len = 89.37, name = "Soggy Place 4" },
+        },
+        -- 0.6.2: reuse Stranglethorn Vale's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "stranglethorn-vale",
+        customs = {},
+        -- No tavern music in Un'Goro Crater.
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181011, 8181015, 8181017, 53695, 53697, 53698 },
+    },
+    ["burning-steppes"] = {
+        title = "Burning Steppes",
+        -- 0.6.2. 1428 = Burning Steppes (Forever/classic-era, area 46), 36 = retail (different bounds).
+        mapIDs = { 1428, 36 },
+        names = { "Burning Steppes" },
+        -- ZoneMusic 10 "Zone-Volcanic": SoundKits 2529 (day) + 2539 (night), 4 files.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53812, len = 72.88, name = "Day Volcanic 1" },
+            { id = 53813, len = 87.33, name = "Day Volcanic 2" },
+            { id = 53814, len = 71.21, name = "Night Volcanic 1" },
+            { id = 53815, len = 64.42, name = "Night Volcanic 2" },
+        },
+        -- 0.6.2: reuse Durotar's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "durotar",
+        customs = {},
+        -- No tavern music in the Burning Steppes.
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181275, 8181277, 8181279, 8181281, 53812, 53813, 53814, 53815 },
+    },
+    ["western-plaguelands"] = {
+        title = "Western Plaguelands",
+        -- 0.6.2. 1422 = Western Plaguelands (Forever/classic-era, area 28), 22 = retail (same bounds).
+        mapIDs = { 1422, 22 },
+        names = { "Western Plaguelands" },
+        -- ZoneMusic 205 "Zone-Plaguelands": SoundKit 6066 (day and night), 3 files (cursedland04-06).
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53429, len = 79.32, name = "Cursed Land 4" },
+            { id = 53430, len = 82.48, name = "Cursed Land 5" },
+            { id = 53431, len = 74.17, name = "Cursed Land 6" },
+        },
+        -- 0.6.2: reuse Tirisfal Glades's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "tirisfal",
+        customs = {},
+        -- No tavern music in the Western Plaguelands.
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8180744, 8180746, 8180748, 53429, 53430, 53431 },
+    },
+    ["eastern-plaguelands"] = {
+        title = "Eastern Plaguelands",
+        -- 0.6.2. 1423 = Eastern Plaguelands (Forever/classic-era, area 139), 23 = retail (different bounds).
+        mapIDs = { 1423, 23 },
+        names = { "Eastern Plaguelands" },
+        -- ZoneMusic 205 "Zone-Plaguelands": SoundKit 6066 (day and night), 3 files (cursedland04-06).
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53429, len = 79.32, name = "Cursed Land 4" },
+            { id = 53430, len = 82.48, name = "Cursed Land 5" },
+            { id = 53431, len = 74.17, name = "Cursed Land 6" },
+        },
+        -- 0.6.2: reuse Duskwood's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "duskwood",
+        customs = {},
+        -- No tavern music in the Eastern Plaguelands.
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8180744, 8180746, 8180748, 53429, 53430, 53431 },
+    },
+    ["winterspring"] = {
+        title = "Winterspring",
+        -- 0.6.2. 1452 = Winterspring (Forever/classic-era, area 618), 83 = retail (different bounds).
+        mapIDs = { 1452, 83 },
+        names = { "Winterspring" },
+        -- ZoneMusic 8 "Zone-Mountain": SoundKits 2527 (day) + 2537 (night), 7 files. Same kit as Dun Morogh.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53577, len = 120.12, name = "Day Mountain 1" },
+            { id = 53578, len = 66.99, name = "Day Mountain 2" },
+            { id = 53579, len = 80.31, name = "Day Mountain 3" },
+            { id = 53580, len = 64.34, name = "Night Mountain 1" },
+            { id = 53581, len = 63.03, name = "Night Mountain 2" },
+            { id = 53582, len = 69.17, name = "Night Mountain 3" },
+            { id = 53583, len = 63.97, name = "Night Mountain 4" },
+        },
+        -- 0.6.2: reuse Darkshore's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "darkshore",
+        customs = {},
+        -- No tavern music in Winterspring (the Everlook inn has none).
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181287, 8181289, 8181291, 8181293, 8181295, 8181297, 8181299, 53577, 53578, 53579, 53580, 53581, 53582, 53583 },
+    },
+    ["silithus"] = {
+        title = "Silithus",
+        -- 0.6.2. 1451 = Silithus (Forever/classic-era, area 1377), 81 = retail (different bounds).
+        mapIDs = { 1451, 81 },
+        names = { "Silithus" },
+        -- ZoneMusic 176 "Zone-Desert": SoundKits 4754 (day, 3 files) + 4755 (night, 3 files). Same kit as Tanaris.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53432, len = 65.73, name = "Day Desert 1" },
+            { id = 53433, len = 81.04, name = "Day Desert 2" },
+            { id = 53434, len = 54.21, name = "Day Desert 3" },
+            { id = 53435, len = 77.70, name = "Night Desert 1" },
+            { id = 53436, len = 62.47, name = "Night Desert 2" },
+            { id = 53437, len = 57.74, name = "Night Desert 3" },
+        },
+        -- 0.6.2: reuse Westfall's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "westfall",
+        customs = {},
+        -- No tavern music in Silithus (the Cenarion Hold inn has none).
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8181127, 8181129, 8181131, 8181133, 8181135, 8181137, 53432, 53433, 53434, 53435, 53436, 53437 },
+    },
+    ["deadwind-pass"] = {
+        title = "Deadwind Pass",
+        -- 0.6.2. 1430 = Deadwind Pass (Forever/classic-era, area 41), 42 = retail (same bounds).
+        mapIDs = { 1430, 42 },
+        names = { "Deadwind Pass" },
+        -- ZoneMusic 2 "Zone-EvilForest": SoundKit 2524 (day and night), 6 files. Same kit as Tirisfal and Duskwood.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53486, len = 70.74, name = "Day Evil Forest 1" },
+            { id = 53487, len = 72.15, name = "Day Evil Forest 2" },
+            { id = 53488, len = 70.66, name = "Day Evil Forest 3" },
+            { id = 53489, len = 57.29, name = "Night Evil Forest 1" },
+            { id = 53490, len = 75.49, name = "Night Evil Forest 2" },
+            { id = 53491, len = 70.56, name = "Night Evil Forest 3" },
+        },
+        -- 0.6.2: reuse Desolace's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "desolace",
+        customs = {},
+        -- No tavern music in Deadwind Pass.
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8180758, 8180760, 8180762, 8180772, 8180774, 8180776, 53486, 53487, 53488, 53489, 53490, 53491 },
+    },
+    ["moonglade"] = {
+        title = "Moonglade",
+        -- 0.6.2. 1450 = Moonglade (Forever/classic-era, area 493), 80 = retail (same bounds).
+        mapIDs = { 1450, 80 },
+        names = { "Moonglade" },
+        -- ZoneMusic 191 "Zone-DarkForest": SoundKit 5376 (day and night), the 4 Night Forest files. Same kit as Darkshore.
+        -- Classic Era 1.15.9 files (all present in Forever 1.60.1); lengths measured with ffprobe.
+        originals = {
+            { id = 53495, len = 53.19, name = "Night Forest 1" },
+            { id = 53496, len = 42.97, name = "Night Forest 2" },
+            { id = 53497, len = 59.32, name = "Night Forest 3" },
+            { id = 53498, len = 54.31, name = "Night Forest 4" },
+        },
+        -- 0.6.2: reuse Zephras Isle's 6 custom songs (same files under that zone's folder; not copied).
+        customsFrom = "zephras-isle",
+        customs = {},
+        -- No tavern music in Moonglade. customsFrom is Zephras Isle for the 6 custom songs only;
+        -- Moonglade is its own zone, so MusicPlusDB.disableZephras (Zephras Isle off by default) does not apply here.
+        inns = {},
+        innSpots = {},
+        -- Forever 1.60.1 plays re-encoded copies for the same kit(s); Classic files kept too. Both muted in "sound" mode.
+        zoneMusic = { 8180764, 8180766, 8180768, 8180770, 53495, 53496, 53497, 53498 },
+    },
     ["zephras-isle"] = {
         title = "Zephras Isle",
         -- 0.5.8: the Skyborne starting zone (levels 1-12), its own continent map (Map 2991, AreaTable 16593).
@@ -1452,6 +1761,8 @@ local ZONE_ORDER = {
     "wetlands", "hillsbrad-foothills", "stranglethorn-vale",                                     -- 20-45
     "thousand-needles", "arathi-highlands", "desolace", "alterac-mountains",                    -- 25-40 (0.6.1)
     "dustwallow-marsh", "swamp-of-sorrows", "badlands", "feralas", "tanaris",                   -- 30-50 (0.6.1)
+    "the-hinterlands", "searing-gorge", "blasted-lands", "azshara", "felwood", "un-goro-crater", -- 40-55 (0.6.2)
+    "burning-steppes", "western-plaguelands", "eastern-plaguelands", "winterspring", "silithus", "deadwind-pass", "moonglade", -- 50-60 (0.6.2)
     "zephras-isle",                                                                              -- 1-12, Skyborne (0.5.8)
 }
 
@@ -1472,6 +1783,14 @@ for key, z in pairs(ZONES) do
             local title = t.display or t.name or tostring(t.file):match("([^\\/]+)%.[Mm][Pp]3$") or tostring(t.file)
             z.customTracks[#z.customTracks + 1] = { name = title, fileName = t.name, file = ADDON_DIR .. t.file, duration = t.len }
         end
+    end
+end
+-- 0.6.2: a zone with customsFrom uses that zone's customTracks (same file paths). Must run after
+-- every zone has built customTracks (the first loop is pairs(), so it can't be done in the same pass).
+for key, z in pairs(ZONES) do
+    if z.customsFrom then
+        local src = ZONES[z.customsFrom]
+        if src then z.customTracks = src.customTracks end
     end
 end
 
@@ -1500,15 +1819,27 @@ local POOL_VALUES = { "zone", "all" }
 local POOL_LABELS = { zone = "For this zone only", all = "Play music from all zones" }
 -- 0.6.0: Song Selection Mode (MusicPlusDB.songMode): 1 = originals + customs (default, as before), 2 = customs only.
 -- Every zone, capitals included (their intros are separate: DB.intros).
-local SONGMODE_VALUES = { 1, 2 }
-local SONGMODE_LABELS = { [1] = "Classic Tracks and MusicPlus", [2] = "MusicPlus Tracks Only" }
-local SONGMODE_TIP = "Classic Tracks and MusicPlus: Plays classic tracks first, then MusicPlus tracks. " ..
-    "MusicPlus Tracks Only: plays only MusicPlus songs (city intros still play if enabled)."
+-- 0.6.0 Song Selection Mode; 0.6.2 also Track Order (one table so the main chunk stays under Lua 5.1's 200 locals).
+local SONGMODE = {
+    VALUES = { 1, 2 },
+    LABELS = { [1] = "Classic Tracks and MusicPlus", [2] = "MusicPlus Tracks Only" },
+    TIP = "Classic Tracks and MusicPlus: plays both classic tracks and MusicPlus tracks (see Track Order). " ..
+        "MusicPlus Tracks Only: plays only MusicPlus songs (city intros still play if enabled).",
+    -- Track Order, only used when Song Selection Mode is Classic Tracks and MusicPlus.
+    -- "first" (default) = all originals, then all customs. "interlace" = alternate original and custom, starting with a classic.
+    ORDER_VALUES = { "first", "interlace" },
+    ORDER_LABELS = { first = "Classic tracks first", interlace = "Interlace" },
+    ORDER_TIP = "Classic tracks first (default): all classic tracks (shuffled), then all MusicPlus songs " ..
+        "(shuffled). Interlace: alternates classic tracks and MusicPlus songs, starting with a classic track. If one " ..
+        "kind runs out, the rest of the other kind play to the end of the round. Only used with Classic Tracks and " ..
+        "MusicPlus (greyed out for MusicPlus Tracks Only). Also /mplus order first | interlace.",
+}
 local ALL_LEVELING_CUSTOMS = {}
 for _, key in ipairs(ZONE_ORDER) do
     local z = ZONES[key]
     z.city = CAPITALS[key] == true
-    if not z.city then
+    -- 0.6.2: zones that reuse another zone's customs are not added again (same files).
+    if not z.city and not z.customsFrom then
         for _, t in ipairs(z.customTracks) do ALL_LEVELING_CUSTOMS[#ALL_LEVELING_CUSTOMS + 1] = t end
     end
 end
@@ -1535,6 +1866,7 @@ local MAP_YARDS = {
     [1443] = { 4495.83, 2997.92 }, [66] = { 4495.83, 2997.92 },   -- Desolace (0.6.1)
     [1445] = { 5250.00, 3500.00 }, [70] = { 5250.00, 3500.00 },   -- Dustwallow Marsh (0.6.1)
     [1446] = { 6900.00, 4600.00 },                                -- Tanaris (0.6.1)
+    [1425] = { 3850.00, 2566.67 }, [26] = { 3850.00, 2566.67 },   -- The Hinterlands (0.6.2)
 }
 local SAVED_SPOT_RADIUS = 12 -- yards, for spots saved with /mplus inn
 local POLL_INN = 0.5         -- seconds between position checks
@@ -1543,7 +1875,7 @@ local INN_EXIT_EXTRA = 10    -- yards added to a spot's radius: the inn state ho
 local INN_EXIT_OUTDOORS = 5  -- polls in a row outdoors (2.5 s) before the inn state ends
 local INN_EXIT_FAR = 2       -- polls in a row beyond radius + INN_EXIT_EXTRA before the inn state ends
 
-local DB = { enabled = true, mode = "music", bgSound = true, loop = true, titles = false, pool = "zone", intros = true, songMode = 1 } -- replaced by MusicPlusDB on ADDON_LOADED
+local DB = { enabled = true, mode = "music", bgSound = true, loop = true, titles = false, pool = "zone", intros = true, songMode = 1, trackOrder = "first" } -- replaced by MusicPlusDB on ADDON_LOADED
 
 local S = {
     active = false, testing = false, rotation = nil, pos = 0, track = nil, handle = nil,
@@ -1585,6 +1917,10 @@ local function OrigPool(z)
     if DB.songMode == 2 and #CustomPool(z) > 0 then return {} end
     return z.origTracks
 end
+-- 0.6.2: Interlace is on only with Classic Tracks and MusicPlus (BuildRotation also requires both kinds).
+function SONGMODE.InterlaceOn()
+    return DB.songMode ~= 2 and DB.trackOrder == "interlace"
+end
 local function Debug(msg) if S.debug then Print("|cff999999[debug]|r " .. tostring(msg)) end end
 
 -- 0.5.9: "Disable MusicPlus for this zone" (MusicPlusDB.disabledZones[zone title] = true). A disabled zone is treated
@@ -1592,6 +1928,8 @@ local function Debug(msg) if S.debug then Print("|cff999999[debug]|r " .. tostri
 -- 0.5.18: Zephras Isle is off by default (MusicPlusDB.disableZephras, default true): Blizzard's scripted music plays
 -- there. Same zone object as always (uiMap 2521/2665 + children, or zone text "Zephras Isle"), so a disabled Zephras
 -- goes through exactly the 0.5.9 per-zone disable path (outside the zones: fade out, game music back).
+-- 0.6.2: Moonglade reuses Zephras Isle's custom songs but is a different zone key, so this default-off does not
+-- apply there (Moonglade plays unless the player disables Moonglade itself).
 local ZEPHRAS_KEY = "zephras-isle"
 local function ZoneDisabled(z)
     if z ~= nil and z.key == ZEPHRAS_KEY and DB and DB.disableZephras ~= false then return true end
@@ -2000,18 +2338,29 @@ local function Shuffled(list)
     return t
 end
 
--- All originals (shuffled), then all customs (shuffled). The song that played last (loop boundary or
--- re-entry) is never first: if the shuffle puts it there, it's swapped with another song of its group.
+-- All originals (shuffled), then all customs (shuffled). 0.6.2 Interlace: original, custom, original, custom,
+-- starting with a classic track; leftovers of the longer list are appended. The song that played last
+-- (loop boundary or re-entry) is never first: if the shuffle puts it there, it's swapped with another
+-- song of its group.
 local function BuildRotation(z)
     local orig, cust = Shuffled(OrigPool(z)), Shuffled(CustomPool(z)) -- 0.5.7: the customs pool; 0.6.0: OrigPool (song mode)
-    local first = (#orig > 0) and orig or cust
+    local interlace = SONGMODE.InterlaceOn() and #orig > 0 and #cust > 0
+    local first = interlace and orig or ((#orig > 0) and orig or cust)
     if #first > 1 and first[1].file == S.lastFile then
         local j = math.random(2, #first)
         first[1], first[j] = first[j], first[1]
     end
     local r = {}
-    for _, t in ipairs(orig) do r[#r + 1] = t end
-    for _, t in ipairs(cust) do r[#r + 1] = t end
+    if interlace then -- original, custom, original, custom, ... leftovers of the longer list appended
+        local i, j = 1, 1
+        while i <= #cust or j <= #orig do
+            if j <= #orig then r[#r + 1] = orig[j]; j = j + 1 end
+            if i <= #cust then r[#r + 1] = cust[i]; i = i + 1 end
+        end
+    else
+        for _, t in ipairs(orig) do r[#r + 1] = t end
+        for _, t in ipairs(cust) do r[#r + 1] = t end
+    end
     S.rotation, S.pos, S.nOrig, S.nCustom = r, 0, #orig, #cust
     S.round = (S.round or 0) + 1 -- 0.6.0: history entries of an older round aren't positions in this one
 end
@@ -2025,8 +2374,15 @@ local function PosLabel(i, plain)
         if S.track and S.track.intro then return "Intro" end -- 0.5.18
     end
     if not (S.rotation and i and i > 0) then return "-" end
-    if i <= S.nOrig then return ("Original %d/%d"):format(i, S.nOrig) end
-    return ("Custom %d/%d"):format(i - S.nOrig, S.nCustom)
+    local t = S.rotation[i]
+    if not t then return "-" end
+    -- 0.6.2: count in the rotation (Interlace is not "all originals, then all customs")
+    local nO, nC = 0, 0
+    for k = 1, i do
+        if S.rotation[k].original then nO = nO + 1 else nC = nC + 1 end
+    end
+    if t.original then return ("Original %d/%d"):format(nO, S.nOrig) end
+    return ("Custom %d/%d"):format(nC, S.nCustom)
 end
 
 local PlayIndex -- forward declaration
@@ -2715,8 +3071,9 @@ local function SetPool(value)
     DB.pool = value
     if changed and S.active and not S.testing and S.zone and not S.zone.city and S.rotation then
         -- 0.6.1: changing Leveling Zone Music starts a fresh round right away, at its custom songs
+        -- 0.6.2: Interlace starts with a classic (PlayIndex 1); classic-first still jumps to the customs.
         StopCurrent(0, true); BuildRotation(S.zone)
-        PlayIndex((S.nCustom > 0) and (S.nOrig + 1) or 1)
+        PlayIndex((SONGMODE.InterlaceOn() or S.nCustom == 0) and 1 or (S.nOrig + 1))
     end
     RefreshUI()
 end
@@ -2751,14 +3108,35 @@ local function RebuildSongMode()
         for i = #r, pos + 1, -1 do r[i] = nil end -- PlayIndex(pos + 1) then builds a new round (BuildRotation)
     end
     Debug(("song mode for %s: %s; %d original(s) this round, %d song(s) left"):format(z.title,
-        SONGMODE_LABELS[DB.songMode], S.nOrig, #S.rotation - S.pos))
+        SONGMODE.LABELS[DB.songMode], S.nOrig, #S.rotation - S.pos))
 end
 
 local function SetSongMode(value)
     value = (tonumber(value) == 2) and 2 or 1
     local changed = DB.songMode ~= value
     DB.songMode = value
-    if changed and S.active and not S.testing and S.zone and S.rotation then RebuildSongMode() end
+    if changed and S.active and not S.testing and S.zone and S.rotation then
+        -- 0.6.2: Interlace isn't "originals then customs", so RebuildSongMode's leftover math doesn't apply;
+        -- start a fresh round (Tracks Only: customs only; Classic + Interlace: classic first).
+        if DB.trackOrder == "interlace" then
+            StopCurrent(0, true); BuildRotation(S.zone); PlayIndex(1)
+        else
+            RebuildSongMode()
+        end
+    end
+    RefreshUI()
+end
+
+-- 0.6.2: Track Order changed while Classic Tracks and MusicPlus is selected. Start a fresh round right away
+-- (like changing Leveling Zone Music). Saved even while MusicPlus Tracks Only is selected, but the rotation
+-- only rebuilds when the setting actually applies.
+function SONGMODE.SetOrder(value)
+    value = (value == "interlace") and "interlace" or "first"
+    local changed = DB.trackOrder ~= value
+    DB.trackOrder = value
+    if changed and S.active and not S.testing and S.zone and S.rotation and DB.songMode ~= 2 then
+        StopCurrent(0, true); BuildRotation(S.zone); PlayIndex(1)
+    end
     RefreshUI()
 end
 
@@ -2871,9 +3249,9 @@ end
 
 -- 0.6.0: the Song Selection Mode dropdown, built the same way (same fallback button if the API were missing)
 local function SongModeMenu(_, level)
-    for _, v in ipairs(SONGMODE_VALUES) do
+    for _, v in ipairs(SONGMODE.VALUES) do
         local info = UIDropDownMenu_CreateInfo()
-        info.text, info.value = SONGMODE_LABELS[v], v
+        info.text, info.value = SONGMODE.LABELS[v], v
         info.checked = (DB.songMode == v)
         info.func = function() SetSongMode(v); if CloseDropDownMenus then CloseDropDownMenus() end end
         UIDropDownMenu_AddButton(info, level)
@@ -2885,21 +3263,63 @@ local function BuildSongModeDropDown(parent, name)
         local dd = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
         if UIDropDownMenu_SetWidth then UIDropDownMenu_SetWidth(dd, 200) end
         UIDropDownMenu_Initialize(dd, SongModeMenu)
-        dd.SetChoice = function(self, v) UIDropDownMenu_SetText(self, SONGMODE_LABELS[v] or SONGMODE_LABELS[1]) end
+        dd.SetChoice = function(self, v) UIDropDownMenu_SetText(self, SONGMODE.LABELS[v] or SONGMODE.LABELS[1]) end
         -- tooltip: on the dropdown itself (the template's arrow button passes OnEnter/OnLeave on to it); only if
         -- the arrow button has no OnEnter of its own, it gets the tooltip too
         if dd.EnableMouse then dd:EnableMouse(true) end
-        Tooltip(dd, "Song Selection Mode", SONGMODE_TIP)
+        Tooltip(dd, "Song Selection Mode", SONGMODE.TIP)
         local arrow = dd.Button or _G[name .. "Button"]
-        if arrow and arrow.GetScript and not arrow:GetScript("OnEnter") then Tooltip(arrow, "Song Selection Mode", SONGMODE_TIP) end
+        if arrow and arrow.GetScript and not arrow:GetScript("OnEnter") then Tooltip(arrow, "Song Selection Mode", SONGMODE.TIP) end
         return dd, -16
     end
     local b = CreateFrame("Button", name, parent, "UIPanelButtonTemplate")
     b:SetSize(200, 22)
     b:SetScript("OnClick", function() SetSongMode(DB.songMode == 2 and 1 or 2) end)
-    b.SetChoice = function(self, v) self:SetText(SONGMODE_LABELS[v] or SONGMODE_LABELS[1]) end
-    Tooltip(b, "Song Selection Mode", SONGMODE_TIP)
+    b.SetChoice = function(self, v) self:SetText(SONGMODE.LABELS[v] or SONGMODE.LABELS[1]) end
+    Tooltip(b, "Song Selection Mode", SONGMODE.TIP)
     return b, 0
+end
+
+-- 0.6.2: Track Order dropdown, same shape as Song Selection Mode
+function SONGMODE.OrderMenu(_, level)
+    for _, v in ipairs(SONGMODE.ORDER_VALUES) do
+        local info = UIDropDownMenu_CreateInfo()
+        info.text, info.value = SONGMODE.ORDER_LABELS[v], v
+        info.checked = (DB.trackOrder == v)
+        info.func = function() SONGMODE.SetOrder(v); if CloseDropDownMenus then CloseDropDownMenus() end end
+        UIDropDownMenu_AddButton(info, level)
+    end
+end
+
+function SONGMODE.BuildOrderDropDown(parent, name)
+    if UIDropDownMenu_Initialize and UIDropDownMenu_CreateInfo and UIDropDownMenu_AddButton and UIDropDownMenu_SetText then
+        local dd = CreateFrame("Frame", name, parent, "UIDropDownMenuTemplate")
+        if UIDropDownMenu_SetWidth then UIDropDownMenu_SetWidth(dd, 200) end
+        UIDropDownMenu_Initialize(dd, SONGMODE.OrderMenu)
+        dd.SetChoice = function(self, v) UIDropDownMenu_SetText(self, SONGMODE.ORDER_LABELS[v] or SONGMODE.ORDER_LABELS.first) end
+        if dd.EnableMouse then dd:EnableMouse(true) end
+        Tooltip(dd, "Track Order", SONGMODE.ORDER_TIP)
+        local arrow = dd.Button or _G[name .. "Button"]
+        if arrow and arrow.GetScript and not arrow:GetScript("OnEnter") then Tooltip(arrow, "Track Order", SONGMODE.ORDER_TIP) end
+        return dd, -16
+    end
+    local b = CreateFrame("Button", name, parent, "UIPanelButtonTemplate")
+    b:SetSize(200, 22)
+    b:SetScript("OnClick", function() SONGMODE.SetOrder(DB.trackOrder == "interlace" and "first" or "interlace") end)
+    b.SetChoice = function(self, v) self:SetText(SONGMODE.ORDER_LABELS[v] or SONGMODE.ORDER_LABELS.first) end
+    Tooltip(b, "Track Order", SONGMODE.ORDER_TIP)
+    return b, 0
+end
+
+function SONGMODE.SetDropDownEnabled(dd, on)
+    if not dd then return end
+    if on then
+        if UIDropDownMenu_EnableDropDown then UIDropDownMenu_EnableDropDown(dd)
+        elseif dd.Enable then dd:Enable() end
+    else
+        if UIDropDownMenu_DisableDropDown then UIDropDownMenu_DisableDropDown(dd)
+        elseif dd.Disable then dd:Disable() end
+    end
 end
 
 -- 0.6.0: since the tabbed window (BuildWindowControls), only the Settings panel uses this, without opts.
@@ -3020,8 +3440,8 @@ local function BuildControls(parent, prefix, x, y, opts)
         c.songMode, dx = BuildSongModeDropDown(parent, prefix .. "SongMode")
         c.songMode:SetPoint("TOPLEFT", c.songModeLabel, "BOTTOMLEFT", dx, -4)
         -- both descriptions under the dropdown, exactly like the Leveling Zone Music ones (the selected one brighter, RefreshUI)
-        c.songModeDescClassic = AddDesc(parent, c.songModeLabel, 0, -40, "Classic Tracks and MusicPlus: plays classic tracks " ..
-            "first, then MusicPlus tracks.")
+        c.songModeDescClassic = AddDesc(parent, c.songModeLabel, 0, -40, "Classic Tracks and MusicPlus: plays both classic " ..
+            "tracks and MusicPlus tracks (see Track Order).")
         c.songModeDescOnly = AddDesc(parent, c.songModeDescClassic, 0, -4, "MusicPlus Tracks Only: plays only MusicPlus tracks " ..
             "(city intros still play if enabled).")
         last, lastIsDesc, lastCol = c.songModeDescOnly, true, 4
@@ -3336,6 +3756,7 @@ function RefreshUI()
         end
         if c.pool then c.pool:SetChoice(DB.pool) end -- 0.5.7
         if c.songMode then c.songMode:SetChoice(DB.songMode) end -- 0.6.0
+        if c.trackOrder then c.trackOrder:SetChoice(DB.trackOrder or "first") end -- 0.6.2
         if c.poolDescZone then -- 0.5.9: the selected choice's description brighter
             local a, b = (DB.pool == "all") and 0.55 or 0.95, (DB.pool == "all") and 0.95 or 0.55
             c.poolDescZone:SetTextColor(a, a, a)
@@ -3345,6 +3766,22 @@ function RefreshUI()
             local a, b = (DB.songMode == 2) and 0.55 or 0.95, (DB.songMode == 2) and 0.95 or 0.55
             c.songModeDescClassic:SetTextColor(a, a, a)
             c.songModeDescOnly:SetTextColor(b, b, b)
+        end
+        if c.trackOrder then -- 0.6.2: Track Order is only used with Classic Tracks and MusicPlus
+            local on = (DB.songMode ~= 2)
+            SONGMODE.SetDropDownEnabled(c.trackOrder, on)
+            if c.trackOrderLabel then
+                if on then c.trackOrderLabel:SetTextColor(1, 0.82, 0) else c.trackOrderLabel:SetTextColor(0.5, 0.5, 0.5) end
+            end
+            if c.trackOrderDescFirst then
+                local a, b = 0.55, 0.55
+                if on then
+                    a = (DB.trackOrder == "interlace") and 0.55 or 0.95
+                    b = (DB.trackOrder == "interlace") and 0.95 or 0.55
+                end
+                c.trackOrderDescFirst:SetTextColor(a, a, a)
+                c.trackOrderDescInterlace:SetTextColor(b, b, b)
+            end
         end
         if c.vol.failed ~= true then
             c.vol.refreshing = true
@@ -3402,7 +3839,9 @@ local TIPS = {
         "once per hour per city. Also /mplus intro on / off / test.",
     pool = "For this zone only (default): each zone plays its own songs. Play music from all zones: in the " ..
         (#ZONE_ORDER - 6) .. " leveling zones the custom part of the rotation is the custom songs of all leveling zones " ..
-        "together; the zone's own original tracks still come first. Cities always keep their own music. Also /mplus pool zone / all.",
+        "together; the zone's own original tracks still come first (or are interleaved, if Track Order is Interlace). " ..
+        "Cities always keep their own music. Also /mplus pool zone / all.",
+    trackOrder = SONGMODE.ORDER_TIP,
     widget = "Off (default). A small movable bar with the song playing now and Previous, Replay and Skip buttons; hover " ..
         "the title for zone and position. Drag it with the left mouse button, right-click it to lock or unlock it. Hidden " ..
         "while MusicPlus is off. Also /mplus widget on / off.",
@@ -3512,13 +3951,23 @@ local function BuildWindowControls(f)
     c.songModeLabel:SetText("Song Selection Mode")
     c.songMode, dx = BuildSongModeDropDown(m, "MusicPlusOptSongMode")
     c.songMode:SetPoint("TOPLEFT", c.songModeLabel, "BOTTOMLEFT", dx, -4)
-    c.songModeDescClassic = AddDesc(m, c.songModeLabel, 0, -40, "Classic Tracks and MusicPlus: plays classic tracks " ..
-        "first, then MusicPlus tracks.")
+    c.songModeDescClassic = AddDesc(m, c.songModeLabel, 0, -40, "Classic Tracks and MusicPlus: plays both classic " ..
+        "tracks and MusicPlus tracks (see Track Order).")
     c.songModeDescOnly = AddDesc(m, c.songModeDescClassic, 0, -4, "MusicPlus Tracks Only: plays only MusicPlus tracks " ..
         "(city intros still play if enabled).")
+    -- 0.6.2: Track Order, under Song Selection Mode; greyed out when MusicPlus Tracks Only is selected
+    c.trackOrderLabel = m:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    c.trackOrderLabel:SetPoint("TOPLEFT", c.songModeDescOnly, "BOTTOMLEFT", 0, -14)
+    c.trackOrderLabel:SetText("Track Order")
+    c.trackOrder, dx = SONGMODE.BuildOrderDropDown(m, "MusicPlusOptTrackOrder")
+    c.trackOrder:SetPoint("TOPLEFT", c.trackOrderLabel, "BOTTOMLEFT", dx, -4)
+    c.trackOrderDescFirst = AddDesc(m, c.trackOrderLabel, 0, -40, "Classic tracks first (default): all classic tracks " ..
+        "(shuffled), then all MusicPlus songs (shuffled).")
+    c.trackOrderDescInterlace = AddDesc(m, c.trackOrderDescFirst, 0, -4, "Interlace: alternates classic tracks and " ..
+        "MusicPlus songs, starting with a classic track. If one kind runs out, the rest of the other kind finish the round.")
     c.intros = check(m, "Intros", "Play city intro on arrival", "City intro", TIPS.intros,
         function(self) DB.intros = self:GetChecked() and true or false end)
-    c.intros:SetPoint("TOPLEFT", c.songModeDescOnly, "BOTTOMLEFT", -4, -12)
+    c.intros:SetPoint("TOPLEFT", c.trackOrderDescInterlace, "BOTTOMLEFT", -4, -12)
     grey(m, c.intros, "On (default): the city's intro once, then the rotation.")
 
     ---------------- Widget
@@ -3606,7 +4055,7 @@ local function BuildOptionsNav(f)
 end
 
 local function CreateOptionsWindow()
-    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.6.1")
+    local f = MakeWindow("MusicPlusOptionsFrame", WIN_W, WIN_H, "MusicPlus 0.6.2")
     f:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local point, _, relPoint, px, py = self:GetPoint()
@@ -3759,8 +4208,13 @@ local function Status()
         DB.titles and "on" or "off"))
     Print("Leveling Zone Music: " .. POOL_LABELS[DB.pool] .. (DB.pool == "all" and
         (" (" .. #ALL_LEVELING_CUSTOMS .. " custom songs in leveling zones; cities unchanged)") or "")) -- 0.5.7
-    Print("Song Selection Mode: " .. SONGMODE_LABELS[DB.songMode] .. (DB.songMode == 2 and
+    Print("Song Selection Mode: " .. SONGMODE.LABELS[DB.songMode] .. (DB.songMode == 2 and
         " (no original tracks in any zone, capitals included; city intros still play if enabled)" or "")) -- 0.6.0
+    if DB.songMode ~= 2 then -- 0.6.2
+        Print("Track Order: " .. (SONGMODE.ORDER_LABELS[DB.trackOrder] or SONGMODE.ORDER_LABELS.first) ..
+            (DB.trackOrder == "interlace" and " (classic and MusicPlus tracks alternate, starting with a classic track)" or
+            " (all classic tracks, then all MusicPlus songs)"))
+    end
     if S.interrupted then Print("Song is interrupted (alt-tab?); retrying every " .. RETRY .. " s.") end
     if CVarGet("Sound_EnableMusic") == "0" then
         Print("|cffffff00Warning:|r game Music is off; MusicPlus plays on the Music channel, so turn Music on.")
@@ -3831,6 +4285,7 @@ local function Help()
     Print("/mplus loop [on/off] - Loop music (off = 3-5 min silence between songs)   /mplus titles [on/off] - song titles in chat")
     Print("/mplus pool [zone/all] - Leveling Zone Music: this zone's custom songs only, or all leveling zones' (cities unchanged)")
     Print("/mplus songs [classic/only] - Song Selection Mode: original tracks + MusicPlus songs, or MusicPlus songs only (all zones; city intros as set)")
+    Print("/mplus order [first/interlace] - Track Order, with Classic Tracks and MusicPlus: classics first, or alternate starting with a classic track")
     Print("/mplus zone [on/off] - MusicPlus on/off for the zone you're in (no argument = show)   /mplus zone clear - all zones on")
     Print("/mplus zephras [on/off] - MusicPlus in Zephras Isle (off by default: Blizzard gave it its own scripted soundtrack)")
     Print("/mplus intro [on/off] - city intro on arrival   /mplus intro test - play this city's intro now (no cooldown)")
@@ -3896,15 +4351,31 @@ SlashCmdList["MUSICPLUS"] = function(msg)
         SetBgSound(CVarGet(BG_CVAR) == "0")
         Print("Sound in Background is now " .. (CVarGet(BG_CVAR) ~= "0" and "ON." or "OFF."))
         RefreshUI()
+    elseif cmd == "order" or cmd == "trackorder" then -- 0.6.2
+        local v = (rest == "first" or rest == "classic" or rest == "1") and "first"
+            or ((rest == "interlace" or rest == "alt" or rest == "2") and "interlace" or nil)
+        if rest == "on" then v = "interlace" elseif rest == "off" then v = "first" end
+        if rest == "" then
+            Print("Track Order: " .. (SONGMODE.ORDER_LABELS[DB.trackOrder] or SONGMODE.ORDER_LABELS.first) ..
+                ((DB.songMode == 2) and " (not used while Song Selection Mode is MusicPlus Tracks Only)." or ".") ..
+                " Usage: /mplus order first | interlace")
+            return
+        end
+        if not v then Print("Usage: /mplus order first | interlace") return end
+        SONGMODE.SetOrder(v)
+        Print("Track Order is now: " .. SONGMODE.ORDER_LABELS[DB.trackOrder] ..
+            ((DB.songMode == 2) and " (saved; used when Song Selection Mode is Classic Tracks and MusicPlus)." or
+            (DB.trackOrder == "interlace" and " (a fresh round, starting with a classic track)." or
+            " (a fresh round: all classic tracks, then all MusicPlus songs).")))
     elseif cmd == "songs" or cmd == "songmode" or (cmd == "mode" and (rest == "classic" or rest == "only")) then -- 0.6.0
         local v = (rest == "classic" or rest == "1") and 1 or ((rest == "only" or rest == "2") and 2 or nil)
         if rest == "" then
-            Print("Song Selection Mode: " .. SONGMODE_LABELS[DB.songMode] .. ". Usage: /mplus songs classic | only")
+            Print("Song Selection Mode: " .. SONGMODE.LABELS[DB.songMode] .. ". Usage: /mplus songs classic | only")
             return
         end
         if not v then Print("Usage: /mplus songs classic | only") return end
         SetSongMode(v)
-        Print("Song Selection Mode is now: " .. SONGMODE_LABELS[DB.songMode] .. (DB.songMode == 2 and
+        Print("Song Selection Mode is now: " .. SONGMODE.LABELS[DB.songMode] .. (DB.songMode == 2 and
             " (every zone, capitals too, plays only its MusicPlus songs, from the next song; city intros still play if enabled)." or
             " (original zone tracks and MusicPlus songs, from the next song)."))
     elseif cmd == "mode" then
@@ -4025,6 +4496,7 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2)
         if type(DB.titles) ~= "boolean" then DB.titles = false end  -- 0.5.1: song titles in chat, default OFF
         if DB.pool ~= "all" then DB.pool = "zone" end              -- 0.5.7: Leveling Zone Music, default this zone only
         if DB.songMode ~= 2 then DB.songMode = 1 end               -- 0.6.0: Song Selection Mode, default 1 (classic + MusicPlus)
+        if DB.trackOrder ~= "interlace" then DB.trackOrder = "first" end -- 0.6.2: Track Order, default classic tracks first
         if type(DB.disabledZones) ~= "table" then DB.disabledZones = {} end -- 0.5.9: zone title -> true
         if type(DB.disableZephras) ~= "boolean" then DB.disableZephras = true end -- 0.5.18: Zephras Isle off by default
         if type(DB.intros) ~= "boolean" then DB.intros = true end            -- 0.5.18: city intros, default ON
@@ -4101,4 +4573,4 @@ f:SetScript("OnUpdate", function()
     lastFrame = now
 end)
 
-Print("v0.6.1 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")
+Print("v0.6.2 loaded (" .. #ZONE_ORDER .. " zones). /mplus for options, /mplus help for commands.")

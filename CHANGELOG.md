@@ -2,6 +2,16 @@
 
 All notable changes to MusicPlus. Versions are for WoW Forever 1.60.1 (Interface 16001).
 
+## 0.6.2
+
+Changes since 0.6.1:
+
+- MusicPlus now covers all 47 Classic zones (6 capitals, 7 starting zones and 34 leveling zones, levels 1–60, plus Zephras Isle).
+- 13 more leveling zones, each with its own original Classic tracks, reuse an existing zone's 6 custom songs (same files, not copied): The Hinterlands (Dustwallow Marsh), Searing Gorge (The Barrens), Blasted Lands (Badlands), Azshara (Elwynn Forest), Felwood (Teldrassil), Un'Goro Crater (Stranglethorn Vale), Burning Steppes (Durotar), Western Plaguelands (Tirisfal Glades), Eastern Plaguelands (Duskwood), Winterspring (Darkshore), Silithus (Westfall), Deadwind Pass (Desolace), Moonglade (Zephras Isle; plays even when Zephras Isle is off).
+- New **Track Order** option (Music page, under Song Selection Mode): "Classic tracks first" (default, as before) or "Interlace", which alternates classic tracks and MusicPlus songs, starting with a classic track. Only used with "Classic Tracks and MusicPlus"; greyed out for "MusicPlus Tracks Only". Also `/mplus order first` / `interlace`. Changing it starts a fresh round right away.
+- Tavern music keeps playing in the Revantusk Village hut (The Hinterlands).
+- "Play music from all zones" still covers 168 unique songs (reused files are not added a second time).
+
 ## 0.6.1
 
 Changes since 0.6.0:
